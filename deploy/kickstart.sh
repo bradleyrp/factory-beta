@@ -32,7 +32,6 @@ cd ..
 python -c "import sys;__file__='tmp.py';execfile('site/$1/$1/settings.py');sys.exit(1) if 'simulator' in INSTALLED_APPS else sys.exit(0)"
 if (($?==1)); then { echo "[ERROR] simulator already in INSTALLED_APPS"; exit; }; fi
 echo -e "\n#---automatically added\nINSTALLED_APPS = tuple(list(INSTALLED_APPS)+['simulator','omnicalc','djcelery'])\n" >> site/$1/$1/settings.py
-#broker="BROKER_URL = 'django://'\n"
 queues="RQ_QUEUES = {\n\t'default':{\n\t\t'HOST':'localhost',\n\t\t'PORT':6379,\n\t\t'DB':0,\n\t\t'PASSWORD':'bison',\n\t\t'DEFAULT_TIMEOUT':360,\n\t\t},\n\t}"
 celery="import djcelery\ndjcelery.setup_loader()\nBROKER_URL = 'redis://localhost:6379/0'\nCELERY_RESULT_BACKEND = 'redis://localhost:6379/0'\nCELERY_ACCEPT_CONTENT = ['json']\nCELERY_TASK_SERIALIZER = 'json'\nCELERY_RESULT_SERIALIZER = 'json'\nDROPSPOT_ABSOLUTE = '/home/ryb/mplxr/'\nCELERYD_CONCURRENCY = 1\n"
 #---alternate database location
@@ -40,7 +39,7 @@ sed -i "s/os.path.join(BASE_DIR, 'db.sqlite3')/os.path.join(os.path.abspath(BASE
 echo -e $queues >> site/$1/$1/settings.py
 echo -e $celery >> site/$1/$1/settings.py
 echo -e "\n#---automatically added\nurlpatterns += [url(r'^simulator/',include('simulator.urls',namespace='simulator')),]" >> site/$1/$1/urls.py
-mkdir data/$1
+mkdir data/$1 || echo "[NOTE] data directory already exists: data/$1"
 mkdir data/$1/sources
 git clone https://github.com/bradleyrp/omnicalc calc/$1 &> logs/log-$1-git-omni
 git clone https://github.com/bradleyrp/automacs data/$1/docs &> logs/log-$1-git-amx
