@@ -1,0 +1,49 @@
+todo as of 2016.1.15
+
+1. add homology modeling to automacs / make sure that there is a callback to add the PDB
+2. implement a search function to identify possibly out-of-date calculations and delete them
+3. fix paths in omni and connect.py because they are relative to mplxr not calc/dev and also data spots must be a list!
+
+immediate todo for 2016.1.25
+
+send calculations to celery worker
+visualize the ongoing calculations somehow
+decide how to visualize (many) slices
+get rid of collection selections upon group creation/update
+consider making make compute dry an automatic thing for debugging?
+
+todolist kindof
+add extra_calculation models
+write them to meta
+note that we will have to add new meta files somewhere (in deploy when git clone happens or directly in omnicalc)
+tell omnicalc to add extracalcs to calcs always
+make forms for calculations exactly as collections/groups
+note that we will have to load the calcs (colors.py figures.py plot-protein_rmsd.py protein_rmsd.py) somewhere
+run make plot for all plots associated with extracalcs (or autocalcs) after make compute
+but note that we may wish to model the plots
+set up automatic RMSD plots that look good
+write a view which links PNGs to the database
+start outlining three test cases (ptdins cgmd bilayers joe's data)
+create the git repo for testing
+documentation
+
+
+calculations:
+  protein_rmsd:
+    uptype: simulation
+    slice_name: lengthy
+    group: all
+    collections: one
+plots:
+  protein_rmsd:
+    uptype: post
+    calculation: protein_rmsd
+    slices: lengthy
+    collections: 
+      - one
+
+SUPER IMPORTANT DESIGN CONSIDERATION
+
+imagine that you make slices with "all" but not "protein"
+later you try to do a calculation on that slice_name with group protein
+but the slice doesn't exist! so it will fail
