@@ -1,0 +1,100 @@
+
+* { font-family:sans-serif; }
+a { color:black; }
+body p, ol li, ul a, ol a { font-family:monospace; }
+code p {
+	display:block; margin:0; padding:0;
+	font-family:Consolas,Courier New,monospace;
+}
+
+body, form, form input, form label { font-family:Consolas,Courier New,monospace; }
+form label { font-weight:400; }
+form input { font-weight:600; width: 250px;}
+form table ul { list-style-type: none; padding-left:0; }
+form table ul input { width:10px; text-align:left; }
+form table ul label { width:2000px; text-align:left; } 
+form input {
+	font-family:Consolas,Courier New,monospace;
+	border:1px solid #999999;
+	font-weight:600;
+	padding:3px;
+	width:250px;
+}
+
+.grid-item-column {
+  position: relative;
+  float: left;
+  width: 200px;
+  margin: 5px;
+  padding: 10px;
+  background: #d1d1e0;
+  color: #262524;
+}
+
+.grid-item {
+  font-size:10pt;
+  position: relative;
+  float: left;
+  width: 320px;	
+  margin: 5px;
+  padding: 10px;
+  border: 2px solid #999999;
+}
+.grid-item form input {
+	font-size: 8pt;
+	font-family:Consolas,Courier New,monospace;
+	border: 2px solid #999999;
+	font-weight:600;
+	padding:3px;
+	width:250px;
+}
+.grid-item form label {
+	font-size: 8pt;
+	font-family:Consolas,Courier New,monospace;
+	font-weight:600;
+	padding:3px;
+	width:250px;
+}
+
+.tile-col {
+  font-size:10pt;
+  position: relative;
+  float: left;
+  padding: 10px;
+  margin:10px;
+  background: #d1d1e0;
+  color: #262524;
+  text-align: left;
+  border: 2px solid white;
+  font-family:Consolas,Courier New,monospace;
+}
+
+.tile {
+  font-size:10pt;
+  position: relative;
+  float: left;
+  width: 200px;
+  height: 200px;
+  padding: 10px;
+  margin:10px;
+  background: #d1d1e0;
+  color: #262524;
+  text-align: center;
+  border: 2px solid white;
+}
+
+.tile-wide {
+  font-size:10pt;
+  position: relative;
+  float: left;
+  width: 400px;
+  height: 200px;
+  padding: 10px;
+  margin:10px;
+  background: #d1d1e0;
+  color: #262524;
+  text-align: center;
+  border: 2px solid white;
+}
+
+.tile img { border: 2px solid black; }
