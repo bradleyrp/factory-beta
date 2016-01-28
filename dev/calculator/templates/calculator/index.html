@@ -9,12 +9,16 @@
 {% csrf_token %}
 <input type="submit" value="COMPUTE" style="width:150;height:50;font-size:2.0em;"/></td></tr>
 </form>
-<a href="rethumb">refresh thumbnails</a>
-<br><a href="{{ SITE_URL }}/simulator/amxdocs/index.html">simulator docs</a>
-<br><a href="{{ SITE_URL }}/calculator/amxdocs/index.html">calculator docs</a>
-<br><a href="{{ SITE_URL }}/admin" target="_blank">admin console</a>
-<br><a href="http://localhost:5555" target="_blank">computation cluster</a>
-<br><a href="{{ SITE_URL }}/calculator/#image_section">jump to images</a>
+<div style="text-align:left">
+<ol>
+<li><a href="rethumb">refresh thumbnails</a></li>
+<li><a href="{{ SITE_URL }}/simulator/amxdocs/index.html">simulator docs</a></li>
+<li><a href="{{ SITE_URL }}/calculator/amxdocs/index.html">calculator docs</a></li>
+<li><a href="{{ SITE_URL }}/admin" target="_blank">admin console</a></li>
+<li><a href="http://localhost:5555" target="_blank">computation cluster</a></li>
+<li><a href="{{ SITE_URL }}/calculator/#image_section">jump to images</a></li>
+</ol>
+</div>
 <!--{% if running_calculations|length > 1 %}
 <br><a <br><a href="{{ SITE_URL }}/admin" target="_blank">administration</a> target="_blank" style="color:red">celery jam error</a>
 {% endif %}-->

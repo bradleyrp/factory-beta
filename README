@@ -47,3 +47,23 @@ SUPER IMPORTANT DESIGN CONSIDERATION
 imagine that you make slices with "all" but not "protein"
 later you try to do a calculation on that slice_name with group protein
 but the slice doesn't exist! so it will fail
+
+git init;git commit -am 'initial commit'
+git add .gitignore 
+git status
+git add dev -A
+git status
+git commit -am 'added deploy'
+git add README
+touch site/.info write/.info;git add logs/.info calc/.info data/.info site/.info
+touch write/.info
+git add write/.info 
+git status
+git commit -am 'added blank directory info files'
+git gc
+git add makefile
+git count-objects -vH
+git commit -am 'added makefile'
+git add deploy -A
+git commit -am 'added deploy tools'
+cd;git clone mplxr testing
