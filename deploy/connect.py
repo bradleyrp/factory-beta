@@ -1,5 +1,4 @@
-#!/usr/bin/python -i
-execfile('/etc/pythonstart')
+#!/usr/bin/python
 
 """
 Interpret a user input (typically deploy/connect.yaml) in order to set up the factory.
