@@ -183,60 +183,12 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 	rendered = render_to_string('calculator/index.html',outgoing)
 	return render(request,'calculator/index.html',outgoing)
 
-def index_preserved(request,col_id,grp_id):
-
-	"""
-	Show a set of calculations.
-	"""
-
-	print "INCOMING DATA"
-	print col_id,grp_id
-
-	if request.method == 'GET': 
-		form_collection = collection_form()
-		form_group = group_form()
-	else:
-		form_collection = collection_form(request.POST,request.FILES)
-		form_group = group_form(request.POST,request.FILES)
-		if request.path == '/calculator/update_collection':
-			#---write meta file with a new collection
-			if form_collection.is_valid():
-				#with open(settings.CALCSPOT+'/calcs/specs/meta.collections.yaml','w') as fp:
-				#	for id in list(form.cleaned_data['simulations']):
-				#		print Simulation.objects.get(pk=id).name
-				#		fp.write(Simulation.objects.get(pk=id).name+'\n')
-				new_collection = form_collection.save(commit=False)
-				new_collection.save()
-				return HttpResponseRedirect(reverse('calculator:index'))
-		elif request.path == '/calculator/new_group':
-			if form_group.is_valid():
-				new_group = form_group.save(commit=False)
-				new_group.save()
-				return HttpResponseRedirect(reverse('calculator:index'))
-		else: raise Exception('unclear incoming path to the index.html page')
-	fn_yaml = settings.ROOTSPOT+'/calc/'+settings.PROJECT_NAME+'/calcs/specs/meta.yaml'
-	refresh_thumbnails(request)
-	with open(fn_yaml) as fp: raw = fp.read()
-	specs = yaml.load(raw)
-	if not specs: calcs = []
-	else: calcs = [(key,nestpretty(val,spacer=' ')) for key,val in specs['calculations'].items()]
-	outgoing = {
-		'calcs':calcs,
-		'image_fns':collect_images(),
-		'collection_form':form_collection,
-		'group_form':form_group,
-		'simulations':Simulation.objects.all().order_by('id'),
-		'collections':Collection.objects.all().order_by('id'),
-		'groups':Group.objects.all().order_by('id'),
-		}
-	return render(request,'calculator/index.html',outgoing)
-		
 def refresh_times(request):
 
 	"""
 	"""
 	
-	proc = subprocess.Popen('make refresh',cwd='./calc/dev/',
+	proc = subprocess.Popen('make refresh',cwd=settings.CALCSPOT,
 		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	for sim in Simulation.objects.all():
 		sn = sim.code	
@@ -244,7 +196,7 @@ def refresh_times(request):
 			"python -c \"execfile('./omni/base/header.py')",
 			"print work.get_timeseq_range('%s')\"",
 			])
-		proc = subprocess.Popen(miniscript%sn,cwd='./calc/dev/',
+		proc = subprocess.Popen(miniscript%sn,cwd=settings.CALCSPOT,
 			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		catch = proc.communicate()
 		whittled = [i for i in ('\n'.join(catch)).split('\n') if 
@@ -347,7 +299,7 @@ def compute(*args,**kwargs):
 
 	#---! fix path below
 	print settings.CALCSPOT
-	with open(settings.CALCSPOT+'./calcs/specs/meta.slices.yaml','w') as fp:
+	with open(settings.CALCSPOT+'/calcs/specs/meta.slices.yaml','w') as fp:
 		fp.write(yaml.safe_dump(outgoing))
 
 	#---write calculations to a separate yaml file
@@ -369,17 +321,13 @@ def compute(*args,**kwargs):
 
 	#---! fix path below
 	print settings.CALCSPOT
-	with open(settings.CALCSPOT+'./calcs/specs/meta.calculations.yaml','w') as fp:
+	with open(settings.CALCSPOT+'/calcs/specs/meta.calculations.yaml','w') as fp:
 		fp.write(yaml.safe_dump(calcspecs))			
-
-	#---! this is the hackiest line of code 
-	#try: os.system('rm data/dev/post/*')
-	#except: pass
 
 	#---! consider adding make compute dry
 	this_job = BackgroundCalc()
 	this_job.save()
-	sherpacalc.delay(this_job.id,autoreload=True,log='log',cwd='./calc/dev/')
+	sherpacalc.delay(this_job.id,autoreload=True,log='log',cwd=settings.CALCSPOT)
 
 	return HttpResponseRedirect(reverse('calculator:index'))
 
@@ -393,6 +341,6 @@ def calculation_monitor(request):
 		'<h3>running calculation</h3>%s</div>'
 	#---only read if jobs are running otherwise ajax will remember the last text
 	if any(BackgroundCalc.objects.all()):
-		with open('./calc/dev/log') as fp: lines = fp.readlines()
+		with open(settings.CALCSPOT+'/log') as fp: lines = fp.readlines()
 		return JsonResponse({'line':'\n'.join([l.lstrip().rstrip() for l in lines]),'running':True})
 	else: return JsonResponse({'line':'','running':False})
