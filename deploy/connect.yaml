@@ -1,7 +1,7 @@
 ptdins:
   type: existing omnicalc
   paths:
-    data_spots: ['']
+    data_spots: ['/home/localshare/membrane-v5xx']
     post_data_spot: /home/localshare/post-PROJECT_NAME/data
     post_plot_spot: /home/localshare/post-PROJECT_NAME/plot
     workspace_spot: ../../data/PROJECT_NAME/workspace
@@ -11,10 +11,6 @@ ptdins:
   repo: /home/localshare/analysis/omnicalc-ptdins
   omnicalc: https://github.com/bradleyrp/omnicalc
   automacs: http://www.github.com/bradleyrp/automacs
-  #post: /home/localshare/post-ptdins/data
-  #plot: /home/localshare/post-ptdins/plot
-  #repo: /home/localshare/analysis/omnicalc-ptdins
-  #write: /home/localshare/code-repos/write-ptdins 
 
 examples: 
   project: 
@@ -22,4 +18,18 @@ examples:
     drop: data/project
     automacs: https://www.github.com/bradleyrp/automacs
     omnicalc: https://github.com/bradleyrp/omnicalc
+    repo: Null
+  ptdins:
+    type: existing omnicalc
+    paths:
+      data_spots: ['']
+      post_data_spot: /home/localshare/post-PROJECT_NAME/data
+      post_plot_spot: /home/localshare/post-PROJECT_NAME/plot
+      workspace_spot: ../../data/PROJECT_NAME/workspace
+      specs_file: ./calcs/specs/meta.yaml
+    site: site/PROJECT_NAME  
+    calc: calc/PROJECT_NAME
+    repo: /home/localshare/analysis/omnicalc-ptdins
+    omnicalc: https://github.com/bradleyrp/omnicalc
+    automacs: http://www.github.com/bradleyrp/automacs
 

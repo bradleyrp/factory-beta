@@ -16,7 +16,7 @@ def sherpa(program,job_row_id,cwd='./'):
 	"""
 
 	job = subprocess.Popen('./script-%s.py'%program,
-		shell=True,cwd=settings.DROPSPOT_ABSOLUTE+'/'+cwd)
+		shell=True,cwd=settings.ROOTSPOT+'/'+cwd)
 	this_job = BackgroundJob.objects.get(pk=job_row_id)
 	this_job.pid = job.pid
 	this_job.save()

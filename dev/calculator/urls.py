@@ -3,12 +3,9 @@ from django.conf.urls.static import static
 from django.conf import settings
 from . import views
 
-#---django-sse
-#from django.conf.urls import patterns,include,url
-#from django_sse.redisqueue import RedisQueueView
-
 urlpatterns = [
 	url(r'^$',views.index,name='index'),
+	url(r'^ignore=[0-9]+$',views.index,name='index'),
 	url(r'^col(?P<collection_id>[0-9]+)grp(?P<group_id>[0-9]+)',views.index,name='bothIguess'),
 	url(r'^grp(?P<group_id>[0-9]+)$',views.index,name=''),
 	url(r'^grp(?P<group_id>[0-9]+)update$',views.index,name='index',kwargs={'update_group':True}),
@@ -29,5 +26,4 @@ urlpatterns = [
 	]
 
 urlpatterns += static('/static/calculator/',document_root='static/calculator/')
-#---! hardcoding PLOTSPOT because package issues
-urlpatterns += static('/media/',document_root=settings.DROPSPOT_ABSOLUTE+settings.PLOTSPOT)
+urlpatterns += static('/media/',document_root=settings.PLOTSPOT)

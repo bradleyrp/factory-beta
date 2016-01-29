@@ -171,7 +171,7 @@ def background_job_kill(request,id):
 	
 	this_job = BackgroundJob.objects.get(pk=id)
 	print "[STATUS] killing background job with PID: %d"%this_job.pid
-	os.system('bash '+settings.DROPSPOT_ABSOLUTE+'/deploy/terminate_children.sh %d'%this_job.pid)
+	os.system('bash '+settings.ROOTSPOT+'/deploy/terminate_children.sh %d'%this_job.pid)
 	this_job.delete()	
 	return HttpResponseRedirect(reverse('simulator:index'))
 	

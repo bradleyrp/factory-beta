@@ -67,3 +67,6 @@ git commit -am 'added makefile'
 git add deploy -A
 git commit -am 'added deploy tools'
 cd;git clone mplxr testing
+
+get ppi working
+check that images are collected and that the metadata are right
