@@ -170,6 +170,6 @@ for connection_name,specs in sets.items():
 				replace('\\\\','\\').replace('    ','\t')))
 
 		#---previous omnicalc users may have a specific gromacs.py that they wish to use
-		if 'omni_gromacs_config' in specs:
+		if 'omni_gromacs_config' in specs and not not specs['omni_gromacs_config']:
 			gromacs_fn = os.path.abspath(os.path.expanduser(specs['omni_gromacs_config']))
-			shutil.copy(gromacs_fn,specs['calc']+'/gromacs.py')
+			shutil.copyfile(gromacs_fn,specs['calc']+'/gromacs.py')
