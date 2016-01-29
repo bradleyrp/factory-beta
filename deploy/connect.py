@@ -1,12 +1,33 @@
 #!/usr/bin/python
 
 """
-Interpret a user input (typically deploy/connect.yaml) in order to set up the factory.
+Interpret a user input (typically deploy/connect.yaml) in order to set up the "factory".
+See deploy/connect.yaml for example connections.
 """
 
 import os,sys,re,subprocess,shutil,glob,json
 from copy import deepcopy
 import yaml
+
+#---user must supply the yaml file to describe the connections
+if len(sys.argv)!=2: 
+	raise Exception('\n[USAGE] make connect <yaml>') 
+	quit()
+with open(sys.argv[1]) as fp: sets = yaml.load(fp.read())
+if 'examples' in sets: del sets['examples']
+
+print """
+   __            _                   
+  / _| __ _  ___| |_ ___  _ __ _   _ 
+ | |_ / _` |/ __| __/ _ \| '__| | | |
+ |  _| (_| | (__| || (_) | |  | |_| |
+ |_|  \__,_|\___|\__\___/|_|   \__, |
+                               |___/ 
+
+"""
+
+#---APPENDAGES
+#-------------------------------------------------------------------------------------------------------------
 
 urls_additions = """
 #---automatically added
@@ -49,39 +70,37 @@ CELERY_ROUTES = {
 #---PATHS
 """
 
-#---user must supply the yaml file to describe the connections
-if len(sys.argv)!=2: 
-	raise Exception('\n[USAGE] make connect <yaml>') 
-	quit()
-	
-with open(sys.argv[1]) as fp: sets = yaml.load(fp.read())
-if 'examples' in sets: del sets['examples']
+def mkdir_or_report(dn):
+
+	if os.path.isdir(dn): print "[STATUS] found %s"%(dn)
+	else: 
+		os.mkdir(dn)
+		print "[STATUS] created %s"%dn
+
+#---MAIN
+#-------------------------------------------------------------------------------------------------------------
 
 #---master loop over all connections
 for connection_name,specs in sets.items():
 
-	#---regex NAME to the connection name in the paths sub-dictionary
+	#---regex PROJECT_NAME to the connection name in the paths sub-dictionary
 	for key,val in specs['paths'].items(): 
 		if type(val)==list: 
 			for item in val: item = re.sub('PROJECT_NAME',connection_name,item)
-		else: specs['paths'][key] = re.sub('PROJECT_NAME',connection_name,val)
-
+		else: 
+			if not not val: specs['paths'][key] = re.sub('PROJECT_NAME',connection_name,val)
 	for key,val in specs.items():
 		if type(val)==str: specs[key] = re.sub('PROJECT_NAME',connection_name,val)
 	
 	#---make directories if they are absent
+	#---! is this necessary?
 	root_data_dir = 'data/'+connection_name
+	mkdir_or_report(root_data_dir)
+	for key in ['post_plot_spot','post_data_spot']: 
+		mkdir_or_report(os.path.abspath(os.path.expanduser(specs['paths'][key])))
 
-	if os.path.isdir(root_data_dir): print "[STATUS] found root data directory at %s"%(root_data_dir)
-	else: 
-		os.mkdir(root_data_dir)
-		print "[STATUS] created %s"%root_data_dir
-	for key in ['post_plot_spot','post_data_spot']:
-		if os.path.isdir(specs['paths'][key]): print "[STATUS] found %s at %s"%(key,specs['paths'][key])
-		else: 
-			os.mkdir(specs['paths'][key])
-			print "[STATUS] created %s"%specs['paths'][key]
-
+	#---interpret paths from connect.yaml for PROJECT_NAME/PROJECT_NAME/settings.py in the django project
+	#---these paths are all relative to the rootspot, the top directory for the factory codes
 	settings_paths = {
 		'automacs_upstream':specs['automacs'],
 		'project_name':connection_name,
@@ -90,7 +109,7 @@ for connection_name,specs in sets.items():
 		'dropspot':'PLACEHOLDER',
 		'calcspot':specs['calc'],
 		'rootspot':os.path.abspath(os.path.expanduser(os.getcwd()))
-	}
+		}
 
 	#---prepare additions to the settings.py and urls.py
 	settings_append_fn = 'logs/setup-%s-settings-append.py'%connection_name
@@ -102,18 +121,20 @@ for connection_name,specs in sets.items():
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
 	#---! need to make the data spots directory from a list or a string here
+	#---kickstart packages the codes in dev, makes a new project, and updates settings.py and urls.py
 	subprocess.check_call('make kickstart %s %s %s'%(connection_name,settings_append_fn,urls_append_fn),shell=True)
 
-	#---kickstart makes a default omnicalc configuration
 	#---if a repo is specified, we modify the default configuration
 	if 'repo' in specs and not (not specs['repo'] or specs['repo']==''):
+		
 		#---remove blank calcs and local post/plot from default omnicalc configuration
 		for folder in ['post','post','calcs']:
 			dn = 'calc/%s/post'%connection_name
 			if os.path.isdir(dn): shutil.rmtree(dn)
+		
 		#---clone the user's repo into calcs
 		print "[STATUS] cloning the user repo from %s"%specs['repo']
-		#### subprocess.check_call('git clone %s calcs'%specs['repo'],shell=True,cwd=specs['calc'])
+		subprocess.check_call('git clone %s calcs'%specs['repo'],shell=True,cwd=specs['calc'])
 
 		#---modify the default paths in omnicalc to correspond to the paths defined above
 		with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
@@ -121,12 +142,25 @@ for connection_name,specs in sets.items():
 		paths_fn = specs['calc']+'/paths.py'
 		execfile(paths_fn,default_paths)
 		new_paths = deepcopy(default_paths['paths'])
+
+		#---! ??? !!! relative directories
+
 		new_paths['data_spots'] = specs['paths']['data_spots']
 		new_paths['post_data_spot'] = settings_paths['postspot']
 		new_paths['post_plot_spot'] = settings_paths['plotspot']
 		new_paths['workspace_spot'] = root_data_dir+'/workspace'
-		#---automatically detect any yaml files in the specs folder
-		new_paths['specs_file'] = glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')
+
+		
+		#---specs files must be relative to the omnicalc root
+		if not specs['paths']['specs_file']:
+			#---automatically detect any yaml files in the specs folder
+			new_paths['specs_file'] = glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')
+		else:
+			custom_specs = specs['paths']['specs_file']
+			if type(custom_specs)==str: custom_specs = [custom_specs]
+			new_paths['specs_file'] = ['calcs/specs/'+os.path.basename(fn) 
+				for fn in glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')]
+
 		new_paths_file = {'paths':new_paths,'parse_specs':default_paths['parse_specs']}
 		with open(paths_fn,'w') as fp:
 			fp.write('#!/usr/bin/python\n\n')

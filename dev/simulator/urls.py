@@ -15,6 +15,6 @@ urlpatterns = [
 
 urlpatterns += static('/static/simulator/',document_root='static/simulator/')
 urlpatterns += static(r'/amxdocs/',
-	document_root=settings.ROOTSPOT+'/dev/data/%s/amx/docs/build/_build/html/'%
+	document_root=settings.DROPSPOT+'/data/%s/amx/docs/build/_build/html/'%
 	str(Simulation.objects.all().order_by("-id")[0].code) if len(Simulation.objects.all())>0 else 
 	settings.ROOTSPOT+'/dev/data/docs/amx/docs/build/_build/html/')
