@@ -168,3 +168,8 @@ for connection_name,specs in sets.items():
 				fp.write('%s = %s\n\n'%(key,
 				json.dumps(new_paths_file[key],indent=4,ensure_ascii=False).
 				replace('\\\\','\\').replace('    ','\t')))
+
+		#---previous omnicalc users may have a specific gromacs.py that they wish to use
+		if 'omni_gromacs_config' in specs:
+			gromacs_fn = os.path.abspath(os.path.expanduser(specs['omni_gromacs_config']))
+			shutil.copy(gromacs_fn,specs['calc']+'/gromacs.py')

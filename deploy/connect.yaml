@@ -29,6 +29,7 @@ examples:
     site: site/PROJECT_NAME # location of the django project
     calc: calc/PROJECT_NAME # location of omnicalc
     repo: /home/localshare/analysis/omnicalc-ptdins/calcs # git repository for previous omnicalc/calcs
+    omni_gromacs_config: null # location of a user-specific omnicalc/gromacs.py configuration
     omnicalc: https://github.com/bradleyrp/omnicalc # latest omnicalc
     automacs: http://www.github.com/bradleyrp/automacs # latest automacs
     paths:
