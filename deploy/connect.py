@@ -129,7 +129,7 @@ for connection_name,specs in sets.items():
 		
 		#---remove blank calcs and local post/plot from default omnicalc configuration
 		for folder in ['post','post','calcs']:
-			dn = 'calc/%s/post'%connection_name
+			dn = 'calc/%s/%s'%(connection_name,folder)
 			if os.path.isdir(dn): shutil.rmtree(dn)
 		
 		#---clone the user's repo into calcs
