@@ -11,7 +11,7 @@ from PIL import Image
 import json,os,glob,re,time,subprocess
 import yaml
 
-def nestpretty(d,**kwargs):
+def deep_hash_to_text(d,**kwargs):
 
 	"""
 	Turn nested dictionaries into a block of text.
@@ -22,36 +22,34 @@ def nestpretty(d,**kwargs):
 	indent = kwargs.get('indent',0)
 	for key,value in d.iteritems():
 		lines.append(spacer*indent+str(key))
-		if isinstance(value,dict): nestpretty(value,indent=indent+1,lines=lines,spacer=spacer)
+		if isinstance(value,dict): deep_hash_to_text(value,indent=indent+1,lines=lines,spacer=spacer)
 		else: lines.append(spacer*(indent+1)+str(value))
 	return '\n'.join(lines)
 
-def get_image_fns():
+def collect_images():
 
 	"""
-	Collect the names of all images in the plot directory.
+	Collect the names of all images in the plot directory and read their metadata.
 	"""
 
 	omni_paths = {}
-	paths_fn  = settings.DROPSPOT_ABSOLUTE+'/calc/'+settings.PROJECT_NAME+'/paths.py'
-	execfile(paths_fn,omni_paths)
-	#---! formerly str(omni_paths['paths']['post_plot_spot']) below
-	image_fns = [os.path.basename(fn) for fn in 
-		glob.glob('data/dev/plot'+'/*.png')]
-	image_fns = [(re.sub('_',' ',re.findall('^fig\.([^\.]+)\.',fn)[0]),fn) for fn in image_fns]
-	metadat = [eval(Image.open('data/dev/plot/'+fn).info['meta']) for name,fn in image_fns]
-	return [(image_fns[ii][0],image_fns[ii][1],metadat[ii]) for ii in range(len(image_fns))]
+	execfile(settings.CALCSPOT+'/paths.py',omni_paths)
+	image_fns = [os.path.basename(fn) for fn in glob.glob(settings.PLOTSPOT+'/*.png')]
+	names_path_meta = [(
+		re.sub('_',' ',re.findall('^fig\.([^\.]+)\.',fn)[0]),fn,
+		eval(Image.open(settings.PLOTSPOT+'/'+fn).info['meta'])
+		) for fn in image_fns]
+	return names_path_meta
 	
 def refresh_thumbnails(request,remake=False):
 
 	"""
-	Create thumbnails.
+	Create or update thumbnails so the views load faster in case of enormous image files.
 	"""	
 
-	#---had trouble getting settings.PLOTSPOT so hardcoding it here
-	root = os.path.join('data/dev/plot/','')
+	root = settings.PLOTSPOT+'/'
 	if not os.path.isdir(root+'/thumbs'): os.mkdir(root+'/thumbs')
-	image_fns = get_image_fns()
+	image_fns = collect_images()
 	for name,fn,meta in image_fns:
 		thumbfile = os.path.dirname(root+fn)+'/thumbs/'+os.path.basename(root+fn)
 		if not os.path.isfile(thumbfile) or remake:
@@ -59,7 +57,7 @@ def refresh_thumbnails(request,remake=False):
 	#---wait for thumbs to refresh on disk if we remade them
 	if remake: time.sleep(5)
 	#---! need to refresh the page manually after refreshing the thumbnails for some reason
-	return HttpResponseRedirect(reverse('calculator:index'))
+	return HttpResponseRedirect('?ignore=%d'%time.time())
 	
 def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 	update_group=False,update_collection=False,update_calculation=False):
@@ -164,7 +162,7 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 		else: 
 			raise Exception('unclear incoming path to the index.html page')
 	refresh_thumbnails(request)
-	image_fns = get_image_fns()
+	image_fns = collect_images()
 	outgoing = {
 		'image_fns':image_fns,
 		'simulations':Simulation.objects.all().order_by('id'),
@@ -185,60 +183,12 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 	rendered = render_to_string('calculator/index.html',outgoing)
 	return render(request,'calculator/index.html',outgoing)
 
-def index_preserved(request,col_id,grp_id):
-
-	"""
-	Show a set of calculations.
-	"""
-
-	print "INCOMING DATA"
-	print col_id,grp_id
-
-	if request.method == 'GET': 
-		form_collection = collection_form()
-		form_group = group_form()
-	else:
-		form_collection = collection_form(request.POST,request.FILES)
-		form_group = group_form(request.POST,request.FILES)
-		if request.path == '/calculator/update_collection':
-			#---write meta file with a new collection
-			if form_collection.is_valid():
-				#with open(settings.CALCSPOT+'/calcs/specs/meta.collections.yaml','w') as fp:
-				#	for id in list(form.cleaned_data['simulations']):
-				#		print Simulation.objects.get(pk=id).name
-				#		fp.write(Simulation.objects.get(pk=id).name+'\n')
-				new_collection = form_collection.save(commit=False)
-				new_collection.save()
-				return HttpResponseRedirect(reverse('calculator:index'))
-		elif request.path == '/calculator/new_group':
-			if form_group.is_valid():
-				new_group = form_group.save(commit=False)
-				new_group.save()
-				return HttpResponseRedirect(reverse('calculator:index'))
-		else: raise Exception('unclear incoming path to the index.html page')
-	fn_yaml = settings.DROPSPOT_ABSOLUTE+'/calc/'+settings.PROJECT_NAME+'/calcs/specs/meta.yaml'
-	refresh_thumbnails(request)
-	with open(fn_yaml) as fp: raw = fp.read()
-	specs = yaml.load(raw)
-	if not specs: calcs = []
-	else: calcs = [(key,nestpretty(val,spacer=' ')) for key,val in specs['calculations'].items()]
-	outgoing = {
-		'calcs':calcs,
-		'image_fns':get_image_fns(),
-		'collection_form':form_collection,
-		'group_form':form_group,
-		'simulations':Simulation.objects.all().order_by('id'),
-		'collections':Collection.objects.all().order_by('id'),
-		'groups':Group.objects.all().order_by('id'),
-		}
-	return render(request,'calculator/index.html',outgoing)
-		
 def refresh_times(request):
 
 	"""
 	"""
 	
-	proc = subprocess.Popen('make refresh',cwd='./calc/dev/',
+	proc = subprocess.Popen('make refresh',cwd=settings.CALCSPOT,
 		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	for sim in Simulation.objects.all():
 		sn = sim.code	
@@ -246,7 +196,7 @@ def refresh_times(request):
 			"python -c \"execfile('./omni/base/header.py')",
 			"print work.get_timeseq_range('%s')\"",
 			])
-		proc = subprocess.Popen(miniscript%sn,cwd='./calc/dev/',
+		proc = subprocess.Popen(miniscript%sn,cwd=settings.CALCSPOT,
 			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		catch = proc.communicate()
 		whittled = [i for i in ('\n'.join(catch)).split('\n') if 
@@ -349,7 +299,7 @@ def compute(*args,**kwargs):
 
 	#---! fix path below
 	print settings.CALCSPOT
-	with open(settings.CALCSPOT+'./calcs/specs/meta.slices.yaml','w') as fp:
+	with open(settings.CALCSPOT+'/calcs/specs/meta.slices.yaml','w') as fp:
 		fp.write(yaml.safe_dump(outgoing))
 
 	#---write calculations to a separate yaml file
@@ -371,17 +321,13 @@ def compute(*args,**kwargs):
 
 	#---! fix path below
 	print settings.CALCSPOT
-	with open(settings.CALCSPOT+'./calcs/specs/meta.calculations.yaml','w') as fp:
+	with open(settings.CALCSPOT+'/calcs/specs/meta.calculations.yaml','w') as fp:
 		fp.write(yaml.safe_dump(calcspecs))			
-
-	#---! this is the hackiest line of code 
-	#try: os.system('rm data/dev/post/*')
-	#except: pass
 
 	#---! consider adding make compute dry
 	this_job = BackgroundCalc()
 	this_job.save()
-	sherpacalc.delay(this_job.id,autoreload=True,log='log',cwd='./calc/dev/')
+	sherpacalc.delay(this_job.id,autoreload=True,log='log',cwd=settings.CALCSPOT)
 
 	return HttpResponseRedirect(reverse('calculator:index'))
 
@@ -395,7 +341,6 @@ def calculation_monitor(request):
 		'<h3>running calculation</h3>%s</div>'
 	#---only read if jobs are running otherwise ajax will remember the last text
 	if any(BackgroundCalc.objects.all()):
-		with open('./calc/dev/log') as fp: lines = fp.readlines()
+		with open(settings.CALCSPOT+'/log') as fp: lines = fp.readlines()
 		return JsonResponse({'line':'\n'.join([l.lstrip().rstrip() for l in lines]),'running':True})
 	else: return JsonResponse({'line':'','running':False})
-

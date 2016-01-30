@@ -1,15 +1,55 @@
 ptdins:
   type: existing omnicalc
-  post: /home/localshare/post-ptdins/data
-  plot: /home/localshare/post-ptdins/plot
-  repo: /home/localshare/analysis/omnicalc-ptdins
+  site: site/PROJECT_NAME  
+  calc: calc/PROJECT_NAME
+  repo: ~/worker/analysis/omnicalc-ryb/calcs
   omnicalc: https://github.com/bradleyrp/omnicalc
   automacs: http://www.github.com/bradleyrp/automacs
-  write: /home/localshare/code-repos/write-ptdins 
+  paths:
+    data_spots: ['/home/localshare/membrane-v5xx']
+    post_data_spot: ~/worker/post-PROJECT_NAME/post # preexisting post-processed data, slices
+    post_plot_spot: ~/worker/post-PROJECT_NAME/plot # preexisting plots
+    workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
+    specs_file: null # autodetected from repo
 
-project: 
-  type: new
-  drop: data/project
-  automacs: https://www.github.com/bradleyrp/automacs
-  omnicalc: https://github.com/bradleyrp/omnicalc
+# examples correspond to typical use cases
+examples: 
 
+  # brand new project
+  project: 
+    type: new
+    drop: data/project
+    automacs: https://www.github.com/bradleyrp/automacs
+    omnicalc: https://github.com/bradleyrp/omnicalc
+    repo: Null
+
+  # the user has simulations and analysis codes ("repo") but no post data
+  existing_project_no_post:  
+    type: existing omnicalc
+    site: site/PROJECT_NAME # location of the django project
+    calc: calc/PROJECT_NAME # location of omnicalc
+    repo: /home/localshare/analysis/omnicalc-ptdins/calcs # git repository for previous omnicalc/calcs
+    omni_gromacs_config: null # location of a user-specific omnicalc/gromacs.py configuration
+    omnicalc: https://github.com/bradleyrp/omnicalc # latest omnicalc
+    automacs: http://www.github.com/bradleyrp/automacs # latest automacs
+    paths:
+      data_spots: ['/path/to/simulations']
+      post_data_spot: data/PROJECT_NAME/post # this overrides omnicalc default location
+      post_plot_spot: data/PROJECT_NAME/plot # this overrides omnicalc default location
+      workspace_spot: data/PROJECT_NAME/workspace 
+      specs_file: null # connect.py autodetects calc/PROJECT_NAME/calcs/specs/meta*.yaml
+
+  # user has simulation, post, plots, and omnicalc code
+  ptdins:
+    type: existing omnicalc
+    site: site/PROJECT_NAME  
+    calc: calc/PROJECT_NAME
+    repo: /home/localshare/analysis/omnicalc-ptdins/calcs
+    omnicalc: https://github.com/bradleyrp/omnicalc
+    automacs: http://www.github.com/bradleyrp/automacs
+    paths:
+      data_spots: ['/home/localshare/membrane-v5xx']
+      post_data_spot: /home/localshare/post-PROJECT_NAME/post # preexisting post-processed data, slices
+      post_plot_spot: /home/localshare/post-PROJECT_NAME/plot # preexisting plots
+      workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
+      specs_file: null # autodetected from repo

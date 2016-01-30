@@ -1,5 +1,4 @@
 from django.db import models
-from simulator.models import Simulation
 
 class Collection(models.Model):
 
@@ -9,7 +8,7 @@ class Collection(models.Model):
 	"""
 	
 	name = models.CharField(max_length=100,default='',unique=True)
-	simulations = models.ManyToManyField(Simulation)
+	simulations = models.ManyToManyField('simulator.Simulation')
 	def __str__(self): return self.name
 
 class Group(models.Model):
@@ -29,7 +28,7 @@ class Slice(models.Model):
 	"""
 	
 	name = models.CharField(max_length=100,default='',unique=False)
-	simulation = models.ForeignKey(Simulation)
+	simulation = models.ForeignKey('simulator.Simulation')
 	start = models.IntegerField(blank=False,null=True)
 	end = models.IntegerField(blank=False,null=True)
 	skip = models.IntegerField(blank=False,null=True)
@@ -57,11 +56,9 @@ class Calculation(models.Model):
 	name = models.CharField(max_length=100,default='',unique=True)
 	#---! omnicalc must enforce uniqueness between calculations and "extracalcs" defined here
 	name = models.CharField(max_length=100,default='',unique=False)
-	uptype_choices = ['simulation','post']
-	uptype = models.CharField(max_length=30,choices=[(i,i) for i in uptype_choices],default='simulation')
-	slice_name_choices = list(set([str(i.name) for i in Slice.objects.all()]))
+	uptype = models.CharField(max_length=30,choices=[(i,i) for i in ['simulation','post']],default='simulation')
 	slice_name = models.CharField(max_length=50,
-		choices=[(i,i) for i in slice_name_choices],
+		#choices=[(i,i) for i in list(set([str(i.name) for i in Slice.objects.all()]))],
 		blank=True,null=True)
 	group = models.ForeignKey(Group)
 	collections = models.ManyToManyField(Collection)

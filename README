@@ -67,3 +67,12 @@ git commit -am 'added makefile'
 git add deploy -A
 git commit -am 'added deploy tools'
 cd;git clone mplxr testing
+
+get ppi working
+check that images are collected and that the metadata are right
+
+HOOKING UP PATHS
+  docs go in data_spots the first of which becomes dropspot
+    if connecting to existing, put a copy of simulator docs in there?
+    else handle docs the usual way with a new project
+
