@@ -13,18 +13,19 @@ form input { font-weight:600; width: 250px;}
 form table ul { list-style-type: none; padding-left:0; }
 form table ul input { width:10px; text-align:left; }
 form table ul label { width:2000px; text-align:left; } 
+
 form input {
-font-family:Consolas,Courier New,monospace;
-border:1px solid #999999;
-font-weight:600;
-padding:3px;
-width:250px;
-background:#F5F5F5;
+  font-family:Consolas,Courier New,monospace;
+  border:1px solid #999999;
+  font-weight:600;
+  padding:3px;
+  width:250px;
+  background:#F5F5F5;
 }
 
 #submit { min-height:50px;background:gray;color:white;font-size:14pt; }
 
-.tile-col {
+.tile {
   font-size:10pt;
   position: relative;
   float: left;
@@ -33,13 +34,29 @@ background:#F5F5F5;
   background: #d1d1e0;
   color: #262524;
   text-align: left;
-  border: 2px solid white;
+  border: 2px solid #999999;
   font-family:Consolas,Courier New,monospace;
   min-width:300px;
   min-height:200px;
 }
 
-.tile-col form table textarea,select {
+.linktile {
+  font-size:10pt;
+  position: relative;
+  float: left;
+  padding: 10px;
+  margin:10px;
+  background: white;
+  color: #262524;
+  text-align: center;
+  border: 2px solid white;
+  font-family:Consolas,Courier New,monospace;
+  min-height:200px;
+  min-width:200px;
+  border: 3px solid black;
+}
+
+.tile form table textarea,select {
   position: relative;
   float: left;
   text-align: left;
@@ -50,8 +67,8 @@ background:#F5F5F5;
   border:1px solid #999999;
 }
 
-#selected_change.tile-col { border:3px dotted black; }
-#result.tile-col textarea { 
+#selected_change.tile { border:3px dotted black; }
+#result.tile textarea { 
   font-size:8pt;
   resize: none; 
   min-width:600px; 
@@ -61,20 +78,6 @@ background:#F5F5F5;
   padding:3px;
   width:250px;
   background:#F5F5F5;
-}
-
-.tile {
-  font-size:10pt;
-  position: relative;
-  float: left;
-  width: 200px;
-  height: 200px;
-  padding: 10px;
-  margin:10px;
-  background: #d1d1e0;
-  color: #262524;
-  text-align: center;
-  border: 2px solid white;
 }
 
 .tile-wide {
@@ -92,14 +95,5 @@ background:#F5F5F5;
   border: 2px solid black;
 }
 
-.tile img { border: 2px solid black; }
+.linktile img { border: 2px solid black; }
 
-.button {
-  position: relative;
-  float: left;
-  text-align: left;
-  border: 2px solid white;
-  margin:10px;
-  font-family:Consolas,Courier New,monospace;
-  background:white;
-}

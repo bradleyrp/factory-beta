@@ -180,8 +180,9 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 		'slice_form_doc':form_slice.__doc__,
 		}
 	print image_fns
-	rendered = render_to_string('calculator/index.html',outgoing)
-	return render(request,'calculator/index.html',outgoing)
+	modifier = ['','_gridster','_masonry','_freewall'][-1]
+	rendered = render_to_string('calculator/index%s.html'%modifier,outgoing)
+	return render(request,'calculator/index%s.html'%modifier,outgoing)
 
 def refresh_times(request):
 

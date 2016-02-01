@@ -17,20 +17,22 @@ logfile logs/log-serve
 EOF
 
 projname=$1
+sitespot="site/"
 #---previously used the projects.txt file to get the last project
 if [ -z $projname ]; then { echo "[USAGE] make run <project_name>"; exit; }; fi
+if [ "$projname" == "dev" ]; then { sitespot="./"; } fi
 
 source env/bin/activate
 if [[ -f logs/log-serve ]]; then rm logs/log-serve; fi
 #---open screens for the server, for the worker, and for flower
 echo "[SERVE] waiting for the servers" 
-screen -c /tmp/screenrc -d -L -S multiplexer -m python site/$projname/manage.py runserver
+screen -c /tmp/screenrc -d -L -S multiplexer -m python $sitespot/$projname/manage.py runserver
 sleep 3
-screen -c /tmp/screenrc -d -L -S worker_sim -m python site/$projname/manage.py celery -A $projname worker -n queue_sim -Q queue_sim --loglevel=INFO
+screen -c /tmp/screenrc -d -L -S worker_sim -m python $sitespot/$projname/manage.py celery -A $projname worker -n queue_sim -Q queue_sim --loglevel=INFO
 sleep 3
-screen -c /tmp/screenrc -d -L -S worker_calc -m python site/$projname/manage.py celery -A $projname worker -n queue_calc -Q queue_calc --loglevel=INFO
+screen -c /tmp/screenrc -d -L -S worker_calc -m python $sitespot/$projname/manage.py celery -A $projname worker -n queue_calc -Q queue_calc --loglevel=INFO
 sleep 3
-screen -c /tmp/screenrc -d -L -S flower -m python site/$projname/manage.py celery -A $projname flower
+screen -c /tmp/screenrc -d -L -S flower -m python $sitespot/$projname/manage.py celery -A $projname flower
 wait_grep logs/log-serve http || { echo "[ERROR] no http in logs/log-serve"; exit 1; }
 address=$(sed -En 's/^Starting development server at (http.+)\//\1/p' logs/log-serve)
 echo "[SERVE] interface website @ "$(echo $address | tr -d '\r')"/simulator"

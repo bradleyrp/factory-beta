@@ -27,17 +27,17 @@ shutdown:
 shell: 
 	@bash deploy/shell.sh ${RUN_ARGS} || echo "[STATUS] fail"
 
-#---kickstart a new project with a simulator
-kickstart: bootstrap
-	@bash deploy/kickstart.sh ${RUN_ARGS} || echo "[STATUS] fail"
+#---kickstart a new project with a simulator (deprecated by connect.py)
+#kickstart: bootstrap
+#	@bash deploy/kickstart.sh ${RUN_ARGS} || echo "[STATUS] fail"
 
 #---kickstart a project using connect.yaml
-reconnect: wipe bootstrap
-	@python deploy/connect.py ${RUN_ARGS} || echo "[STATUS] fail"
+#reconnect: wipe bootstrap
+#	@python deploy/connect.py ${RUN_ARGS} || echo "[STATUS] fail"
 
 #---reset with confirmation
-reset:
-	@bash deploy/reset.sh ${RUN_ARGS} || echo "[STATUS] fail"
+#reset:
+#	@bash deploy/reset.sh ${RUN_ARGS} || echo "[STATUS] fail"
 
 #---package a multiplexer app in a standalone folder and install
 package:
@@ -56,12 +56,12 @@ wipe:
 	@bash deploy/wipe.sh || echo "[STATUS] fail"
 
 #---reset the development environment
-devclean:
-	@bash deploy/devclean.sh || echo "[STATUS] fail"	
+#devclean:
+#	@bash deploy/devclean.sh || echo "[STATUS] fail"	
 
 #---reset the omnicalc repo during development
-omninuke:
-	@bash deploy/devomni.sh || echo "[STATUS] fail"
+#omninuke:
+#	@bash deploy/devomni.sh || echo "[STATUS] fail"
 	
 connect: 
 	@python deploy/connect.py ${RUN_ARGS} || echo "[STATUS] fail"

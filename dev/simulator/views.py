@@ -39,7 +39,8 @@ def index(request):
 			return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
 	allsims = Simulation.objects.all().order_by('id')
 	allsources = Source.objects.all().order_by('id')
-	return render(request,'simulator/index.html',
+	modifier = ['','_freewall'][1]
+	return render(request,'simulator/index%s.html'%modifier,
 		{'form_simulation':form,'allsims':allsims,
 		'form_sources':form_sources,'allsources':allsources,
 		'alljobs':BackgroundJob.objects.all().order_by('id')})
