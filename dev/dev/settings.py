@@ -75,7 +75,11 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+<<<<<<< HEAD
+ULTRAROOT = '/home/ryb/mplxr/'
+=======
 ROOTSPOT = '/home/ryb/mplxr/'
+>>>>>>> e316a24d6ae5c008a99a1ea6ad551cff4656429b
 CELERYD_CONCURRENCY = 1
 CELERY_QUEUES = (
     Queue('queue_sim',Exchange('queue_sim'),routing_key='queue_sim'),
