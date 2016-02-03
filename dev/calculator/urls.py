@@ -23,7 +23,9 @@ urlpatterns = [
 	url(r'^refresh_times$',views.refresh_times,name='refresh_times'),
 	url(r'^sim(?P<id>[0-9]+)',views.detail_simulation,name='detail_simulation'),
 	url(r'^logger',views.calculation_monitor,name='calculation_monitor'),
+	url(r'^path=(?P<path>.+)$',views.view_code,name='view_code')
 	]
 
 urlpatterns += static('/static/calculator/',document_root='static/calculator/')
 urlpatterns += static('/media/',document_root=settings.PLOTSPOT)
+urlpatterns += static('/codes/',document_root=settings.ROOTSPOT)

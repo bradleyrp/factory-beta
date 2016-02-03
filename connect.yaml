@@ -2,13 +2,14 @@ ptdins:
   type: existing omnicalc
   site: site/PROJECT_NAME  
   calc: calc/PROJECT_NAME
-  repo: ~/worker/analysis/omnicalc-ryb/calcs
+  repo: /home/ryb/worker/analysis/omnicalc-ryb/calcs
+  database: site/PROJECT_NAME/db.factory.sqlite3
   omnicalc: https://github.com/bradleyrp/omnicalc
   automacs: http://www.github.com/bradleyrp/automacs
-  paths:
-    data_spots: ['/home/localshare/membrane-v5xx']
-    post_data_spot: ~/worker/post-PROJECT_NAME/post # preexisting post-processed data, slices
-    post_plot_spot: ~/worker/post-PROJECT_NAME/plot # preexisting plots
+  paths: # all maths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
+    data_spots: ['/home/localshare/membrane-v5xx'] # preexisting simulations
+    post_data_spot: /home/ryb/worker/post-PROJECT_NAME/post # preexisting post-processed data, slices
+    post_plot_spot: /home/ryb/worker/post-PROJECT_NAME/plot # preexisting plots
     workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
     specs_file: null # autodetected from repo
 

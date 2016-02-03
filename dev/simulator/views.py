@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.forms import formset_factory
 from django.contrib.staticfiles.views import serve
+from django.http import JsonResponse
 from .forms import *
 from .models import *
 from .tasks import sherpa
@@ -21,6 +22,7 @@ def index(request):
 		form_sources = build_sources_form()
 	else:
 		form = build_simulation_form(request.POST,request.FILES)
+		form_sources = build_sources_form()
 		if form.is_valid():
 			sim = form.save(commit=False)
 			#---clone automacs
@@ -34,12 +36,13 @@ def index(request):
 				shell=True,cwd=settings.DROPSPOT)
 			subprocess.check_call('make program %s'%sim.program,
 				shell=True,cwd=settings.DROPSPOT+sim.code)
-			subprocess.check_call('make docs',shell=True,cwd=settings.DROPSPOT+sim.code)
+			subprocess.check_call('source %s/env/bin/activate && make docs'%settings.ROOTSPOT,
+				shell=True,cwd=settings.DROPSPOT+sim.code)
 			sim.save()
 			return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
 	allsims = Simulation.objects.all().order_by('id')
 	allsources = Source.objects.all().order_by('id')
-	modifier = ['','_freewall'][1]
+	modifier = ['','_basic'][0]
 	return render(request,'simulator/index%s.html'%modifier,
 		{'form_simulation':form,'allsims':allsims,
 		'form_sources':form_sources,'allsources':allsources,
@@ -54,7 +57,6 @@ def upload_sources(request):
 	form = build_simulation_form()
 	if request.method == 'GET': form_sources = build_sources_form()
 	else:
-		if 0 and 'upload_button' in request.POST: print "FOUND UPLOAD BUTTON!"
 		form_sources = build_sources_form(request.POST,request.FILES)
 		if form_sources.is_valid():
 			source = form_sources.save(commit=False)
@@ -176,3 +178,20 @@ def background_job_kill(request,id):
 	this_job.delete()	
 	return HttpResponseRedirect(reverse('simulator:index'))
 	
+def calculation_monitor(request):
+
+	"""
+	Report on a running calculation if one exists.
+	"""
+
+	#---only read if jobs are running otherwise ajax will remember the last text
+	print BackgroundJob.objects.all()
+	if any(BackgroundJob.objects.all()):
+		jobs = BackgroundJob.objects.all().order_by('-id')
+		dn = next(j for j in jobs if j.pid!=-1).simulation.code
+		logs = glob.glob(settings.DROPSPOT+dn+'/*.log')
+		last_log = sorted([os.path.basename(g) for g in glob.glob(settings.DROPSPOT+dn+'/*.log')],
+			key=lambda x:int(re.findall('^script-s([0-9]+)-.+\.log$',x)[0]))[-1]
+		with open(settings.DROPSPOT+dn+'/'+last_log) as fp: lines = fp.readlines()
+		return JsonResponse({'line':lines,'running':True})
+	else: return JsonResponse({'line':'','running':True})

@@ -46,8 +46,8 @@ settings
 cat $2 >> site/$1/$1/settings.py
 cat $3 >> site/$1/$1/urls.py
 
-#---!
-sed -i "s/os.path.join(BASE_DIR, 'db.sqlite3')/os.path.join(os.path.abspath(BASE_DIR)+'\/..\/..\/data\/$1','db.sqlite3')/g" site/$1/$1/settings.py
+#---previously used sed to specify the database
+#sed -i "s/os.path.join(BASE_DIR, 'db.sqlite3')/os.path.join(os.path.abspath(BASE_DIR)+'\/..\/..\/data\/$1','db.sqlite3')/g" site/$1/$1/settings.py
 
 #---create data directories
 mkdir data/$1 || echo "[NOTE] data directory already exists: data/$1"

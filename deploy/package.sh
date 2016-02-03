@@ -11,4 +11,7 @@ sed -i.bak "s/#---SETTINGS/$repl/g" pack/$projname/setup.py
 sed -i.bak "s/APPNAME/$projname/g" pack/$projname/MANIFEST.in 
 python pack/$projname/setup.py sdist
 source env/bin/activate
-pip install pack/$projname/dist/$projname-0.1.tar.gz &> logs/log-pip-$projname
+echo "[STATUS] installing package"
+echo -e "y\n" | pip uninstall $projname &> logs/log-pip-$projname 
+pip install pack/$projname/dist/$projname-0.1.tar.gz &>> logs/log-pip-$projname
+echo "[STATUS] $projname installed"

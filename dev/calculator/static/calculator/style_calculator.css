@@ -1,99 +1,58 @@
-
-* { font-family:sans-serif; }
-a { color:black; }
-body p, ol li, ul a, ol a { font-family:monospace; }
-code p {
-  display:block; margin:0; padding:0;
-  font-family:Consolas,Courier New,monospace;
+body {
+  background: #e8e8e8;
+  font-family: 'Helvetica Neue', Helvetica, Arial;
 }
 
-body, form, form input, form label { font-family:Consolas,Courier New,monospace; }
-form label { font-weight:400; }
-form input { font-weight:600; width: 250px;}
-form table ul { list-style-type: none; padding-left:0; }
-form table ul input { width:10px; text-align:left; }
-form table ul label { width:2000px; text-align:left; } 
+body a {
+    color: #008;
+    text-decoration: none;
+}
 
-form input {
-  font-family:Consolas,Courier New,monospace;
+body a:visited {
+    color: #208;
+    text-decoration: none;
+}
+
+body a:hover {
+    text-decoration: underline;
+}
+
+body a.toc-backref {
+    color: #000000;
+}
+
+.brick {
+  background: white;
+  box-shadow: 0 1px 5px 0 rgba(0, 0, 0, 0.33);
+  border-radius: 5px;
+  color: #333;
+  border: none;
+  width: 400px;
+}
+
+#submit { 
+  min-height:50px;
+  background:gray;
+  color:white;
+  font-size:14pt;
+}
+
+#result { min-height:400px; }
+
+.brick .inbrick { 
+  padding: 20px; 
+}
+
+.brick .inbrick .imagetile a img { 
+  width: 100%; 
+}
+
+.brick .inbrick form table { width: 100%; text-align:right; }
+
+form input,textarea,select {
   border:1px solid #999999;
   font-weight:600;
   padding:3px;
-  width:250px;
+  width:100%;
   background:#F5F5F5;
 }
-
-#submit { min-height:50px;background:gray;color:white;font-size:14pt; }
-
-.tile {
-  font-size:10pt;
-  position: relative;
-  float: left;
-  padding: 10px;
-  margin:10px;
-  background: #d1d1e0;
-  color: #262524;
-  text-align: left;
-  border: 2px solid #999999;
-  font-family:Consolas,Courier New,monospace;
-  min-width:300px;
-  min-height:200px;
-}
-
-.linktile {
-  font-size:10pt;
-  position: relative;
-  float: left;
-  padding: 10px;
-  margin:10px;
-  background: white;
-  color: #262524;
-  text-align: center;
-  border: 2px solid white;
-  font-family:Consolas,Courier New,monospace;
-  min-height:200px;
-  min-width:200px;
-  border: 3px solid black;
-}
-
-.tile form table textarea,select {
-  position: relative;
-  float: left;
-  text-align: left;
-  border: 2px solid white;
-  font-family:Consolas,Courier New,monospace;
-  min-width:250px;
-  background:#F5F5F5;
-  border:1px solid #999999;
-}
-
-#selected_change.tile { border:3px dotted black; }
-#result.tile textarea { 
-  font-size:8pt;
-  resize: none; 
-  min-width:600px; 
-  height:150px; 
-  font-family:Consolas,Courier New,monospace;
-  border:1px solid #999999;
-  padding:3px;
-  width:250px;
-  background:#F5F5F5;
-}
-
-.tile-wide {
-  font-size:10pt;
-  position: relative;
-  float: left;
-  width: 400px;
-  height: auto;
-  padding: 5px;
-  margin:10px;
-  background: #d1d1e0;
-  color: #262524;
-  text-align: left;
-  border: 2px solid white;
-  border: 2px solid black;
-}
-
-.linktile img { border: 2px solid black; }
-

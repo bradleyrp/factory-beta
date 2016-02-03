@@ -39,6 +39,7 @@ def collect_images():
 		re.sub('_',' ',re.findall('^fig\.([^\.]+)\.',fn)[0]),fn,
 		eval(Image.open(settings.PLOTSPOT+'/'+fn).info['meta'])
 		) for fn in image_fns]
+	print "[STATUS] images: "+str(image_fns)
 	return names_path_meta
 	
 def refresh_thumbnails(request,remake=False):
@@ -163,6 +164,15 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 			raise Exception('unclear incoming path to the index.html page')
 	refresh_thumbnails(request)
 	image_fns = collect_images()
+	#---collect codes
+	code_fns = []
+	for root,dns,fns in os.walk(settings.CALCSPOT+'/calcs/'): 
+		print root,dns,fns
+		for fn in fns:
+			print fn
+			if re.match('^.+[^_]\.py$',fn):
+				code_fns.append((fn,os.path.join(root,fn)))
+	print '[STATUS] code files: %s'%code_fns
 	outgoing = {
 		'image_fns':image_fns,
 		'simulations':Simulation.objects.all().order_by('id'),
@@ -178,9 +188,10 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 		'running_calculations':BackgroundCalc.objects.all().order_by('id'),
 		'calculation_form':form_calculation,
 		'slice_form_doc':form_slice.__doc__,
+		'code_fns':code_fns,
 		}
 	print image_fns
-	modifier = ['','_gridster','_masonry','_freewall'][-1]
+	modifier = ['','_original'][0]
 	rendered = render_to_string('calculator/index%s.html'%modifier,outgoing)
 	return render(request,'calculator/index%s.html'%modifier,outgoing)
 
@@ -328,7 +339,7 @@ def compute(*args,**kwargs):
 	#---! consider adding make compute dry
 	this_job = BackgroundCalc()
 	this_job.save()
-	sherpacalc.delay(this_job.id,autoreload=True,log='log',cwd=settings.CALCSPOT)
+	sherpacalc.delay(this_job.id,autoreload=True,log='log',cwd='./')
 
 	return HttpResponseRedirect(reverse('calculator:index'))
 
@@ -345,3 +356,13 @@ def calculation_monitor(request):
 		with open(settings.CALCSPOT+'/log') as fp: lines = fp.readlines()
 		return JsonResponse({'line':'\n'.join([l.lstrip().rstrip() for l in lines]),'running':True})
 	else: return JsonResponse({'line':'','running':False})
+
+def view_code(request,path):
+
+	"""
+	Render a code to HTML.
+	"""
+
+	print "[STATUS] rendering code: %s"%path
+	with open(path) as fp: code = fp.read()
+	return render(request,'calculator/codeview.html',{'code':code,'path':path})

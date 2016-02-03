@@ -41,9 +41,12 @@ class form_simulation_tune(forms.Form):
 				self.fields[key] = forms.CharField(max_length=255,initial=val)
 				self.fields[key].label = key.lower()
 		source_choices = [[obj.id,obj.name] for obj in Source.objects.all()]
+		#---previously used widget=forms.CheckboxSelectMultiple
 		self.fields['incoming_sources'] = forms.MultipleChoiceField(required=False,
-			widget=forms.CheckboxSelectMultiple,choices=source_choices)
+			choices=source_choices)
 		self.fields['incoming_sources'].label = 'extras'
+		if len(self.fields['incoming_sources'].choices)==0:
+			self.fields['incoming_sources'].label = ''
 
 class build_sources_form(forms.ModelForm):
 

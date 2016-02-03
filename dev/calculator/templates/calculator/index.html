@@ -3,36 +3,72 @@
 {% load staticfiles %}
 {% block content %}
 
-<div class=""
-<div class="linktile">
+<div id="freewall" class="free-wall" style="padding:10px;">
+
+<div class="brick" style="text-align:center;">
+<div class="inbrick">
 {% include "calculator/tile_main.html" %}
-</div>
-<div class="tile">
+</div></div>
+<div class="brick"><div class="inbrick">	
+{% include "calculator/tile_menu.html" %}
+</div></div>
+
+<div class="brick"><div class="inbrick">
 {% include "calculator/tile_console.html" %}
-</div>
-<div class="tile">
+</div></div>
+
+<div class="brick"><div class="inbrick">
 {% include "calculator/tile_new_slice.html" %}
-</div>
-<div class="tile">
+</div></div>
+
+<div class="brick"><div class="inbrick">
 {% include "calculator/tile_calculation.html" %}
-</div>
-<div class="tile">
+</div></div>
+
+<div class="brick"><div class="inbrick">
 {% include "calculator/tile_collection.html" %}
-</div>
-<div class="tile">
+</div></div>
+
+<div class="brick"><div class="inbrick">
 {% include "calculator/tile_group.html" %}
-</div>
-<div class="tile">
+</div></div>
+
+<div class="brick"><div class="inbrick">
 {% include "calculator/tile_simulation_list.html" %}
-</div>
-<div class="tile">
+</div></div>
+
+<div class="brick">
+<div class="inbrick">
 {% include "calculator/tile_calculation_list.html" %}
-</div>
-<div class="tile">
+</div></div>
+
+<div class="brick"><div class="inbrick">
 {% include "calculator/tile_collection_list.html" %}
-</div>
-<div class="tile">
+</div></div>
+
+<div class="brick"><div class="inbrick">
 {% include "calculator/tile_group_list.html" %}
+</div></div>
+
+<div class="brick"><div class="inbrick">
+<h3>codes</h3><ol>
+{% for fn,path in code_fns %}
+<li><a href="path={{ path }}">{{ fn }}</a></li>
+{% endfor %}
+</ol></div></div>
+
+<!--IMAGES-->
+{% for key,fn,metadat in image_fns %}
+
+<div class="brick"><div class="inbrick"><div class="imagetile"><strong>{{ key }}</strong><br>
+<a href="media/{{ fn }}"><img src="media/thumbs/{{ fn }}" style="max-width:350;max-height:400"></a>
+<ol>{% for key,val in metadat.items %}<li>{{ key }}: {{ val }}</li>{% endfor %}</ol>
+</div></div>
+
 </div>
+
+{% endfor %}
+
+</div>	
 
 {% endblock content %}

@@ -3,14 +3,19 @@
 #-------------------------------------------------------------------------------------------------------------
 
 #---filter and evaluate
+-include banner
 RUN_ARGS_UNFILTER := $(wordlist 1,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-RUN_ARGS := $(filter-out banner run shutdown shell kickstart package bootstrap reset connect reconnect wipe devclean omninuke,$(RUN_ARGS_UNFILTER))
+RUN_ARGS := $(filter-out banner run shutdown shell kickstart package bootstrap \
+	reset connect reconnect wipe devclean nuke help,$(RUN_ARGS_UNFILTER))
 $(eval $(RUN_ARGS):;@:)
 
 #---show the banner if no targets
 banner:
-	@sed -n 1,13p deploy/README.md
-	@echo "[NOTE] use 'make help' for details"
+	@sed -n 1,11p deploy/README.md
+
+#---useful hints
+help:
+	@tail -n +12 deploy/README.md
 
 #---do not target arguments if using python
 .PHONY: banner ${RUN_ARGS}
@@ -18,6 +23,10 @@ banner:
 #---start a server and detach the screen
 run:
 	@bash deploy/run.sh ${RUN_ARGS} || echo "[STATUS] fail"
+
+#---refresh connections via descriptions in a yaml file
+connect: 
+	@python deploy/connect.py ${RUN_ARGS} || echo "[STATUS] fail"
 
 #---reattach the screen running the server
 shutdown:
@@ -27,17 +36,9 @@ shutdown:
 shell: 
 	@bash deploy/shell.sh ${RUN_ARGS} || echo "[STATUS] fail"
 
-#---kickstart a new project with a simulator (deprecated by connect.py)
-#kickstart: bootstrap
-#	@bash deploy/kickstart.sh ${RUN_ARGS} || echo "[STATUS] fail"
-
-#---kickstart a project using connect.yaml
-#reconnect: wipe bootstrap
-#	@python deploy/connect.py ${RUN_ARGS} || echo "[STATUS] fail"
-
-#---reset with confirmation
-#reset:
-#	@bash deploy/reset.sh ${RUN_ARGS} || echo "[STATUS] fail"
+#---kickstart a new project
+kickstart: bootstrap
+	@bash deploy/kickstart.sh ${RUN_ARGS} || echo "[STATUS] fail"
 
 #---package a multiplexer app in a standalone folder and install
 package:
@@ -51,17 +52,6 @@ depack:
 bootstrap:
 	@bash deploy/bootstrap.sh || echo "[STATUS] fail"
 
-#---reset everything with no confirmation and also obliterate data and calc
-wipe:
-	@bash deploy/wipe.sh || echo "[STATUS] fail"
-
-#---reset the development environment
-#devclean:
-#	@bash deploy/devclean.sh || echo "[STATUS] fail"	
-
-#---reset the omnicalc repo during development
-#omninuke:
-#	@bash deploy/devomni.sh || echo "[STATUS] fail"
-	
-connect: 
-	@python deploy/connect.py ${RUN_ARGS} || echo "[STATUS] fail"
+#---erase everything and start from scratch
+nuke:
+	@bash deploy/nuke.sh || echo "[STATUS] fail"

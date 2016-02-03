@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 """
-Interpret a user input (typically deploy/connect.yaml) in order to set up the "factory".
-See deploy/connect.yaml for example connections.
+Interpret a user input (typically connect.yaml) in order to set up the "factory".
+See connect.yaml for example connections.
 """
 
 import os,sys,re,subprocess,shutil,glob,json
@@ -15,16 +15,6 @@ if len(sys.argv)!=2:
 	quit()
 with open(sys.argv[1]) as fp: sets = yaml.load(fp.read())
 if 'examples' in sets: del sets['examples']
-
-print """
-   __            _                   
-  / _| __ _  ___| |_ ___  _ __ _   _ 
- | |_ / _` |/ __| __/ _ \| '__| | | |
- |  _| (_| | (__| || (_) | |  | |_| |
- |_|  \__,_|\___|\__\___/|_|   \__, |
-                               |___/ 
-
-"""
 
 #---APPENDAGES
 #-------------------------------------------------------------------------------------------------------------
@@ -70,6 +60,8 @@ CELERY_ROUTES = {
 #---PATHS
 """
 
+def abspath(path): return os.path.expanduser(os.path.abspath(path))
+
 def mkdir_or_report(dn):
 
 	if os.path.isdir(dn): print "[STATUS] found %s"%(dn)
@@ -106,9 +98,9 @@ for connection_name,specs in sets.items():
 		'project_name':connection_name,
 		'plotspot':specs['paths']['post_plot_spot'],
 		'postspot':specs['paths']['post_data_spot'],
-		'dropspot':'PLACEHOLDER',
+		'dropspot':"PLACEHOLDER",
 		'calcspot':specs['calc'],
-		'rootspot':os.path.abspath(os.path.expanduser(os.getcwd()))
+		'rootspot':os.getcwd(),
 		}
 
 	#---prepare additions to the settings.py and urls.py
@@ -118,11 +110,19 @@ for connection_name,specs in sets.items():
 		fp.write(setings_additions)
 		for key,val in settings_paths.items():
 			fp.write('%s = "%s"\n'%(key.upper(),val))
+		for key in ['PLOTSPOT','POSTSPOT','ROOTSPOT']: 
+			fp.write('%s = os.path.expanduser(os.path.abspath(%s))\n'%(key,key))
+		#---user-specified database
+		if 'database' in specs['paths']: 
+			fp.write("DATABASES['default']['NAME'] = %s\n"%specs['paths']['database'])
+		else: fp.write(
+			"DATABASES['default']['NAME'] = os.path.join(os.path.abspath(BASE_DIR),'db.sqlite3')\n")
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
 	#---! need to make the data spots directory from a list or a string here
 	#---kickstart packages the codes in dev, makes a new project, and updates settings.py and urls.py
-	subprocess.check_call('make kickstart %s %s %s'%(connection_name,settings_append_fn,urls_append_fn),shell=True)
+	subprocess.check_call('make kickstart %s %s %s'%(
+		connection_name,settings_append_fn,urls_append_fn),shell=True)
 
 	#---if a repo is specified, we modify the default configuration
 	if 'repo' in specs and not (not specs['repo'] or specs['repo']==''):
@@ -142,8 +142,6 @@ for connection_name,specs in sets.items():
 		paths_fn = specs['calc']+'/paths.py'
 		execfile(paths_fn,default_paths)
 		new_paths = deepcopy(default_paths['paths'])
-
-		#---! ??? !!! relative directories
 
 		new_paths['data_spots'] = specs['paths']['data_spots']
 		new_paths['post_data_spot'] = settings_paths['postspot']

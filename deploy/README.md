@@ -1,11 +1,18 @@
+                          
 
+   _|               |                       
+  |     _` |   __|  __|   _ \    __|  |   | 
+  __|  (   |  (     |    (   |  |     |   | 
+ _|   \__,_| \___| \__| \___/  _|    \__, | 
+                                     ____/  
 
- __    __     ______   __         __  __     ______    
-/\ "-./  \   /\  == \ /\ \       /\_\_\_\   /\  == \   
-\ \ \-./\ \  \ \  _-/ \ \ \____  \/_/\_\/_  \ \  __<   
- \ \_\ \ \_\  \ \_\    \ \_____\   /\_\/\_\  \ \_\ \_\ 
-  \/_/  \/_/   \/_/     \/_____/   \/_/\/_/   \/_/ /_/ 
-                                                       
+            "one-to-many"
 
-            MULTIPLEXER: one-to-many
+[NOTE] use 'make help' for details
+
+# refresh connections to project data
+make connect connect.yaml
+
+# test updates to a package in a live project:
+make shutdown && make depack && make package calculator && make package simulator && make run ptdins
 

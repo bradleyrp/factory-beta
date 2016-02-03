@@ -4,6 +4,8 @@
 <div style="clear:both;"></div>
 <div class="tile-col">
 
+{% include "simulator/navigate.html" %}
+
 <h2>simulation: {{ sim.name }}</h2>
 <code><p>
 program: {{ sim.program }}<br>
@@ -26,8 +28,9 @@ location: {{ path }}
 </form>
 {% else %}
 {% block code %}
+<strong>settings code</strong>
 <code>
-{{ settings_text|linebreaks }}
+{{ settings_text|linebreaksbr }}
 </code>
 {% endblock %}
 {% endif %}

@@ -10,7 +10,6 @@ class Source(models.Model):
 	"""
 	
 	name = models.CharField(max_length=100,default='',unique=True)
-	dropspot = models.TextField(default='./')
 	def __str__(self): return self.name
 
 	def folder(self):
@@ -47,7 +46,6 @@ class Simulation(models.Model):
 	program = models.CharField(max_length=30,choices=[(i,i) for i in program_choices],default='protein')
 	started = models.BooleanField(default=False)
 	code = models.CharField(max_length=200,unique=True)
-	dropspot = models.TextField(default='./')
 	sources = models.ManyToManyField(Source)
 	time_sequence = models.CharField(max_length=100,default='')
 	def __str__(self): return self.name
@@ -59,6 +57,7 @@ class Simulation(models.Model):
 		"""
 
 		print '[STATUS] deleting simulation %s'%self.name
+		if re.match('^\s*$',self.code): raise Exception('blank code so cannot delete the simulation')
 		shutil.rmtree(settings.DROPSPOT+'/'+self.code)
 		print '[STATUS] done'
 		super(Simulation,self).delete()

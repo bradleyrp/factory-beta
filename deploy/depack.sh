@@ -1,4 +1,4 @@
 #!/bin/bash
 
-print "[STATUS] clearing pack/"
+echo "[STATUS] clearing pack/"
 rm -rf ./pack/*

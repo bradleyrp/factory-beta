@@ -12,9 +12,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'djcelery',
-    'simulator',
-    'calculator',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -49,7 +46,7 @@ WSGI_APPLICATION = 'dev.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE':'django.db.backends.sqlite3',
-        'NAME':os.path.join('./dev/','db.sqlite3'),
+        'NAME': "data/dev/db.sqlite3",
     }
 }
 
@@ -58,15 +55,13 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-STATIC_URL = '/static/'
-AUTOMACS_UPSTREAM = 'http://www.github.com/bradleyrp/automacs'
 
-#---automatic additions
-PROJECT_NAME = 'dev'
-PLOTSPOT = './data/dev/plot/'
-POSTSPOT = './data/dev/post/'
-DROPSPOT = './data/dev/sims/'
-CALCSPOT = './calc/dev/'
+STATIC_URL = '/static/'
+
+#---will be added from kickstart
+INSTALLED_APPS = tuple(list(INSTALLED_APPS)+['simulator','calculator','djcelery'])
+
+#---will be added from kickstart, celery worker and routing settings
 import djcelery
 from kombu import Exchange,Queue
 djcelery.setup_loader()
@@ -75,11 +70,6 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-<<<<<<< HEAD
-ULTRAROOT = '/home/ryb/mplxr/'
-=======
-ROOTSPOT = '/home/ryb/mplxr/'
->>>>>>> e316a24d6ae5c008a99a1ea6ad551cff4656429b
 CELERYD_CONCURRENCY = 1
 CELERY_QUEUES = (
     Queue('queue_sim',Exchange('queue_sim'),routing_key='queue_sim'),
@@ -90,8 +80,16 @@ CELERY_ROUTES = {
     'calculator.tasks.sherpacalc':{'queue':'queue_calc','routing_key':'queue_calc'},
     }
 
-#---log viewer
-REDIS_SSEQUEUE_CONNECTION_SETTINGS = {
-    'location':'localhost:6379',
-    'db':0,
-    }
+#---PATHS
+PROJECT_NAME = "ptdins"
+DROPSPOT = "data/dev/sims"
+AUTOMACS_UPSTREAM = "http://www.github.com/bradleyrp/automacs"
+AUTOMACS_UPSTREAM = "/home/ryb/testing/data/automacs"
+PLOTSPOT = "data/dev/plot"
+POSTSPOT = "data/dev/post"
+ROOTSPOT = "/home/ryb/testing"
+CALCSPOT = "calc/dev"
+PLOTSPOT = os.path.expanduser(os.path.abspath(PLOTSPOT))+'/'
+POSTSPOT = os.path.expanduser(os.path.abspath(POSTSPOT))+'/'
+ROOTSPOT = os.path.expanduser(os.path.abspath(ROOTSPOT))+'/'
+DROPSPOT = os.path.expanduser(os.path.abspath(DROPSPOT))+'/'
