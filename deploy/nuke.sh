@@ -74,10 +74,10 @@ mkdir data/dev/sims
 mkdir data/dev/sims/sources
 mkdir data/dev/plot
 mkdir data/dev/post
+source env/bin/activate
 git clone https://www.github.com/bradleyrp/omnicalc calc/dev
 git clone https://github.com/bradleyrp/automacs data/dev/sims/docs
 make -C calc/dev config defaults
-source env/bin/activate
 make -C data/dev/sims/docs docs
 python dev/manage.py makemigrations
 python dev/manage.py migrate
