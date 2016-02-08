@@ -60,7 +60,7 @@ CELERY_ROUTES = {
 #---PATHS
 """
 
-def abspath(path): return os.path.expanduser(os.path.abspath(path))
+def abspath(path): return os.path.join(os.path.expanduser(os.path.abspath(path)),'')
 
 def mkdir_or_report(dn):
 
@@ -88,17 +88,18 @@ for connection_name,specs in sets.items():
 	#---! is this necessary?
 	root_data_dir = 'data/'+connection_name
 	mkdir_or_report(root_data_dir)
-	for key in ['post_plot_spot','post_data_spot']: 
-		mkdir_or_report(os.path.abspath(os.path.expanduser(specs['paths'][key])))
+	for key in ['post_plot_spot','post_data_spot','dropspot']: 
+		mkdir_or_report(abspath(specs['paths'][key]))
+	mkdir_or_report(abspath(specs['paths']['dropspot']+'/sources/'))
 
 	#---interpret paths from connect.yaml for PROJECT_NAME/PROJECT_NAME/settings.py in the django project
 	#---these paths are all relative to the rootspot, the top directory for the factory codes
 	settings_paths = {
 		'automacs_upstream':specs['automacs'],
 		'project_name':connection_name,
-		'plotspot':specs['paths']['post_plot_spot'],
-		'postspot':specs['paths']['post_data_spot'],
-		'dropspot':"PLACEHOLDER",
+		'plotspot':abspath(specs['paths']['post_plot_spot']),
+		'postspot':abspath(specs['paths']['post_data_spot']),
+		'dropspot':abspath(specs['paths']['dropspot']),
 		'calcspot':specs['calc'],
 		'rootspot':os.getcwd(),
 		}
@@ -139,15 +140,15 @@ for connection_name,specs in sets.items():
 		#---modify the default paths in omnicalc to correspond to the paths defined above
 		with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
 		default_paths = {}
-		paths_fn = specs['calc']+'/paths.py'
+		if 'parse_specs' not in specs: paths_fn = specs['calc']+'/paths.py'
+		else: paths_fn = specs['parse_specs']
 		execfile(paths_fn,default_paths)
 		new_paths = deepcopy(default_paths['paths'])
 
 		new_paths['data_spots'] = specs['paths']['data_spots']
 		new_paths['post_data_spot'] = settings_paths['postspot']
 		new_paths['post_plot_spot'] = settings_paths['plotspot']
-		new_paths['workspace_spot'] = root_data_dir+'/workspace'
-
+		new_paths['workspace_spot'] = abspath(root_data_dir+'/workspace')
 		
 		#---specs files must be relative to the omnicalc root
 		if not specs['paths']['specs_file']:
@@ -158,9 +159,8 @@ for connection_name,specs in sets.items():
 			if type(custom_specs)==str: custom_specs = [custom_specs]
 			new_paths['specs_file'] = ['calcs/specs/'+os.path.basename(fn) 
 				for fn in glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')]
-
 		new_paths_file = {'paths':new_paths,'parse_specs':default_paths['parse_specs']}
-		with open(paths_fn,'w') as fp:
+		with open(specs['calc']+'/paths.py','w') as fp:
 			fp.write('#!/usr/bin/python\n\n')
 			for key in new_paths_file:
 				fp.write('%s = %s\n\n'%(key,

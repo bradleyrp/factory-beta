@@ -31,13 +31,12 @@ def index(request):
 			print '[STATUS] cloning AUTOMACS'
 			rootdir = 'simulation-v%05d'%sim.id
 			sim.code = rootdir
-			settings.DROPSPOT = os.path.join(settings.DROPSPOT,'')
 			subprocess.check_call('git clone %s %s'%(settings.AUTOMACS_UPSTREAM,rootdir),
 				shell=True,cwd=settings.DROPSPOT)
 			subprocess.check_call('make program %s'%sim.program,
 				shell=True,cwd=settings.DROPSPOT+sim.code)
 			subprocess.check_call('source %s/env/bin/activate && make docs'%settings.ROOTSPOT,
-				shell=True,cwd=settings.DROPSPOT+sim.code)
+				shell=True,cwd=settings.DROPSPOT+sim.code,executable="/bin/bash")
 			sim.save()
 			return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
 	allsims = Simulation.objects.all().order_by('id')
@@ -100,7 +99,7 @@ def detail_source(request,id):
 	"""
 
 	source = get_object_or_404(Source,pk=id)
-	for (dirpath,dirnames,filenames) in os.walk(source.dropspot+'/'+source.folder()): break
+	for (dirpath,dirnames,filenames) in os.walk(settings.DROPSPOT+'/sources/'+source.folder()): break
 	fns = '\n'.join(filenames)	
 	return render(request,'simulator/source.html',{'files':fns,'source':source})
 
