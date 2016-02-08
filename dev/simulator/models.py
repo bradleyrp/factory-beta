@@ -10,6 +10,7 @@ class Source(models.Model):
 	"""
 	
 	name = models.CharField(max_length=100,default='',unique=True)
+	elevate = models.BooleanField(default=False)
 	def __str__(self): return self.name
 
 	def folder(self):
@@ -30,7 +31,6 @@ class Source(models.Model):
 		shutil.rmtree(settings.DROPSPOT+'/sources/'+self.folder())
 		print '[STATUS] done'
 		super(Source,self).delete()
-
 	
 class Simulation(models.Model):
 

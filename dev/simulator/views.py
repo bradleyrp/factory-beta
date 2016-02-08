@@ -133,25 +133,41 @@ def detail_simulation(request,id):
 				key,val = re.findall(regex,line)[0]
 				settings_dict[key] = val
 				settings_order.append(key)
-		for key,val in form.data.items():
-			if key in settings_dict: settings_dict[key] = val
 		#---start simulation
-		for pk in form.data['incoming_sources']:
-			#---if the source is a single PDB we copy that directly
-			obj = Source.objects.get(pk=pk)
-			source_files = glob.glob(settings.DROPSPOT+'/sources/'+obj.folder()+'/*.pdb')
-			if len(source_files) == 1 and re.match('^(.+)\.pdb$',source_files[0]):
-				shutil.copyfile(source_files[0],
-					settings.DROPSPOT+sim.code+'/inputs/'+os.path.basename(source_files[0]))
-				infile = os.path.basename(source_files[0])
-				#---for the protein atomistic simulation we autocomplete the start structure field
-				if (sim.program == 'protein' and 
-					settings_dict['start structure']=='inputs/STRUCTURE.pdb'):
-					settings_dict['start structure'] = 'inputs/'+str(infile)			
-			elif len(source_files) == 0: raise Exception('no source files in resource %s'%str(obj))
-			else: 
-				raise Exception('UNDER DEVELOPMENT: not sure how to process source files: %s'
-					%str(source_files))
+		additional_sources,additional_files = [],[]
+		if form.is_valid():
+			for key,val in form.data.items():
+				if key in settings_dict: settings_dict[key] = val
+			for pk in form.cleaned_data['incoming_sources']:
+				single_pdb = False
+				obj = Source.objects.get(pk=pk)
+				fns = glob.glob(settings.DROPSPOT+'/sources/'+obj.folder()+'/*')
+				#---if only one file and it's a PDB 
+				if len(fns) == 1 and re.match('^.+\.(gro|pdb)$',fns[0]):
+					#---note the PDB structure name if this is a protein atomistic run
+					if (sim.program == 'protein' and 
+						settings_dict['start structure']=='inputs/STRUCTURE.pdb'):
+						infile = os.path.basename(fns[0])
+						settings_dict['start structure'] = 'inputs/'+str(infile)			
+					single_pdb = True
+				#---if the source is "elevated" then we copy everything from its subfolder into inputs
+				if obj.elevate or single_pdb:
+					fns = glob.glob(settings.DROPSPOT+'/sources/'+obj.folder()+'/*')
+					for fn in fns: 
+						shutil.copyfile(fn,settings.DROPSPOT+'/'+sim.code+'/inputs/'+os.path.basename(fn))
+					additional_files.append(os.path.basename(fn))
+				#---if the source is not elevated we copy its folder into inputs
+				#---note downstream codes need a source, they must refer to it by underscored name
+				else:
+					shutil.copytree(settings.DROPSPOT+'/sources/'+obj.folder(),
+						settings.DROPSPOT+'/'+sim.code+'/inputs/'+obj.folder())
+					additional_sources.append(obj.folder())
+		if additional_sources != []: 
+			settings_dict['sources'] = str(additional_sources)
+			settings_order.append('sources')
+		if additional_files != []: 
+			settings_dict['files'] = str(additional_files)
+			settings_order.append('files')
 		simulation_script(script_fn,changes=[(key,settings_dict[key]) for key in settings_order])
 		this_job = BackgroundJob()
 		this_job.simulation = Simulation.objects.get(pk=sim.id)

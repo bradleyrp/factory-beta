@@ -53,11 +53,16 @@ class build_sources_form(forms.ModelForm):
 	class Meta:  
 
 		model = Source
-		fields = ['name']
+		fields = ['name','fileset','elevate']
+		widgets = {
+			'elevate':forms.CheckboxInput(attrs={'title':
+				'copy sources directly into step\nfolder (not step/source_name)'}),
+			}
 		
 	fileset = MultiFileField(min_num=1,maximum_file_size=1024*1024*5)
 
 	def __init__(self,*args,**kwargs):	
+
 		
 		kwargs.setdefault('label_suffix', '')
 		super(build_sources_form, self).__init__(*args, **kwargs)
