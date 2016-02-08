@@ -1,4 +1,5 @@
 *.pyc
 env
 aside
-pack
+pack/*
+!pack/.info
