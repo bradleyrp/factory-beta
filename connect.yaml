@@ -8,6 +8,7 @@ ptdins:
   automacs: http://www.github.com/bradleyrp/automacs
   paths: # all maths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
     data_spots: ['/home/localshare/membrane-v5xx'] # preexisting simulations
+    dropspot: data/PROJECT_NAME/sims # new simulations and simulator docs
     post_data_spot: /home/ryb/worker/post-PROJECT_NAME/post # preexisting post-processed data, slices
     post_plot_spot: /home/ryb/worker/post-PROJECT_NAME/plot # preexisting plots
     workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace

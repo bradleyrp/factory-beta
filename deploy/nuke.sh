@@ -67,7 +67,10 @@ rm -rf ./calc/*
 echo "[STATUS] deleting ./site/*"
 rm -rf ./site/*
 echo "[STATUS] setting up the development server"
+
 #---note that the following sequence mimics kickstarter, customized for development
+#---! integrate the development setup into the kickstarter to handing different development paths
+
 make bootstrap
 mkdir data/dev
 mkdir data/dev/sims
