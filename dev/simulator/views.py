@@ -77,11 +77,12 @@ def simulation_script(fn,changes=None):
 	"""
 	Read (and possibly rewrite) the settings from a simulation script.
 	"""
-	
+
+	end_settings_regex = '^(import amx|from amx import)'	
 	with open(fn) as fp: script = fp.readlines()
-	start_line = [ii for ii,i in enumerate(script) if re.match('^(import amx|from amx import)',i)][0]
+	start_line = [ii for ii,i in enumerate(script) if re.match(end_settings_regex,i)][0]
 	extract = {}
-	exec('\n'.join(script[:[ii for ii,i in enumerate(script) if re.match('^import amx',i)][0]]),extract)
+	exec('\n'.join(script[:[ii for ii,i in enumerate(script) if re.match(end_settings_regex,i)][0]]),extract)
 	settings_text = extract['settings']
 	if not changes: return settings_text
 	else:
