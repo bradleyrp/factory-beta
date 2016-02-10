@@ -79,7 +79,7 @@ def simulation_script(fn,changes=None):
 	"""
 	
 	with open(fn) as fp: script = fp.readlines()
-	start_line = [ii for ii,i in enumerate(script) if re.match('^import amx',i)][0]
+	start_line = [ii for ii,i in enumerate(script) if re.match('^(import amx|from amx import)',i)][0]
 	extract = {}
 	exec('\n'.join(script[:[ii for ii,i in enumerate(script) if re.match('^import amx',i)][0]]),extract)
 	settings_text = extract['settings']
