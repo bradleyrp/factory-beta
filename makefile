@@ -21,7 +21,7 @@ help:
 .PHONY: banner ${RUN_ARGS}
 
 #---start a server and detach the screen
-run:
+run: shutdown
 	@bash deploy/run.sh ${RUN_ARGS} || echo "[STATUS] fail"
 
 #---refresh connections via descriptions in a yaml file
