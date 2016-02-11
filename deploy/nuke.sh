@@ -66,7 +66,11 @@ echo "[STATUS] deleting ./calc/*"
 rm -rf ./calc/*
 echo "[STATUS] deleting ./site/*"
 rm -rf ./site/*
-echo "[STATUS] setting up the development server"
+make bootstrap
+
+<<deprecated
+
+# these functions were incorporated into connect.py via the dev entry in the yaml file
 
 #---note that the following sequence mimics kickstarter, customized for development
 #---! integrate the development setup into the kickstarter to handing different development paths
@@ -87,3 +91,5 @@ python dev/manage.py migrate
 echo \
 "from django.contrib.auth.models import User;User.objects.create_superuser('admin','','admin');print;quit();"|\
 python ./dev/manage.py shell &> /dev/null
+
+deprecated

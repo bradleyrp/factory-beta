@@ -10,11 +10,20 @@ from copy import deepcopy
 import yaml
 
 #---user must supply the yaml file to describe the connections
-if len(sys.argv)!=2: 
+devmode = "DEVELOP" in sys.argv
+if len(sys.argv)!=2 and not (len(sys.argv)==3 and devmode): 
 	raise Exception('\n[USAGE] make connect <yaml>') 
 	quit()
 with open(sys.argv[1]) as fp: sets = yaml.load(fp.read())
 if 'examples' in sets: del sets['examples']
+
+#---develop flag restricts attention only to the single develop entry
+if devmode:
+	devkeys = [i for i in sets if sets[i]['type']=='development']
+	if len(devkeys)!=1: 
+		raise Exception('\n[ERROR] when using the develop option to connect.py you can only have one '+
+			'development type in the yaml file')
+	sets = dict([(key,val) for key,val in sets.items() if key==devkeys[0]])
 
 #---APPENDAGES
 #-------------------------------------------------------------------------------------------------------------
@@ -122,8 +131,10 @@ for connection_name,specs in sets.items():
 
 	#---! need to make the data spots directory from a list or a string here
 	#---kickstart packages the codes in dev, makes a new project, and updates settings.py and urls.py
-	subprocess.check_call('make kickstart %s %s %s'%(
-		connection_name,settings_append_fn,urls_append_fn),shell=True)
+	if not devmode:
+		
+		subprocess.check_call('make kickstart %s %s %s'%(
+			connection_name,settings_append_fn,urls_append_fn),shell=True)
 
 	#---if a repo is specified, we modify the default configuration
 	if 'repo' in specs and not (not specs['repo'] or specs['repo']==''):
@@ -171,3 +182,19 @@ for connection_name,specs in sets.items():
 		if 'omni_gromacs_config' in specs and not not specs['omni_gromacs_config']:
 			gromacs_fn = os.path.abspath(os.path.expanduser(specs['omni_gromacs_config']))
 			shutil.copyfile(gromacs_fn,specs['calc']+'/gromacs.py')
+
+	#---extra commands for develpment
+	if devmode:
+
+		os.system("git clone https://www.github.com/bradleyrp/omnicalc calc/dev "+
+			"&> logs/log-dev-clone-omni")
+		os.system("git clone https://github.com/bradleyrp/automacs data/dev/sims/docs "+
+			"&> logs/log-dev-clone-sims")
+		os.system("make -C calc/dev config defaults &> logs/log-dev-omni-config")
+		os.system("make -C data/dev/sims/docs docs &> logs/log-dev-sims-docs")
+		os.system('echo "from django.contrib.auth.models import User;User.objects.create_superuser'+
+			'(\'admin\',\'\',\'admin\');print;quit();" | python ./dev/manage.py shell &> /dev/null')
+		os.system('source env/bin/activate && python dev/manage.py makemigrations '+
+			'&> logs/log-dev-makemigrations')
+		os.system('source env/bin/activate && python dev/manage.py migrate '+
+			'&> logs/log-dev-migrate')

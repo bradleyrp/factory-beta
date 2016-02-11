@@ -55,3 +55,18 @@ examples:
       post_plot_spot: /home/localshare/post-PROJECT_NAME/plot # preexisting plots
       workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
       specs_file: null # autodetected from repo
+
+  # "dev" is a protected name that holds live code according to this example
+  dev: 
+    type: development
+    calc: calc/PROJECT_NAME
+    omnicalc: https://github.com/bradleyrp/omnicalc
+    automacs: http://www.github.com/bradleyrp/automacs
+    paths:
+      data_spots: []
+      dropspot: data/PROJECT_NAME/sims
+      post_data_spot: data/PROJECT_NAME/post
+      post_plot_spot: data/PROJECT_NAME/plot
+      workspace_spot: data/PROJECT_NAME/workspace
+      specs_file: null
+      # repo is not implemented here
