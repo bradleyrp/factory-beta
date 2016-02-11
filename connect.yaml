@@ -17,7 +17,7 @@ ptdins:
 # examples correspond to typical use cases
 examples: 
 
-  # brand new project
+  # "NEW" brand new project
   project: 
     type: new
     drop: data/project
@@ -25,7 +25,7 @@ examples:
     omnicalc: https://github.com/bradleyrp/omnicalc
     repo: Null
 
-  # the user has simulations and analysis codes ("repo") but no post data
+  # "NO POST" the user has simulations and analysis codes ("repo") but no post data
   existing_project_no_post:  
     type: existing omnicalc
     site: site/PROJECT_NAME # location of the django project
@@ -41,7 +41,7 @@ examples:
       workspace_spot: data/PROJECT_NAME/workspace 
       specs_file: null # connect.py autodetects calc/PROJECT_NAME/calcs/specs/meta*.yaml
 
-  # user has simulation, post, plots, and omnicalc code
+  # "EXISTING" user has simulation, post, plots, and omnicalc code
   ptdins:
     type: existing omnicalc
     site: site/PROJECT_NAME  
@@ -56,7 +56,24 @@ examples:
       workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
       specs_file: null # autodetected from repo
 
-  # "dev" is a protected name that holds live code according to this example
+  # "NO REPO"
+  adhesion:
+    type: existing omnicalc
+    site: site/PROJECT_NAME  
+    calc: calc/PROJECT_NAME
+    repo: calc/PROJECT_NAME/
+    database: site/PROJECT_NAME/db.factory.sqlite3
+    omnicalc: https://github.com/bradleyrp/omnicalc
+    automacs: http://www.github.com/bradleyrp/automacs
+    paths: # all maths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
+      data_spots: [''] # preexisting simulations
+      dropspot: data/PROJECT_NAME/sims # new simulations and simulator docs
+      post_data_spot: /home/ryb/worker/post-PROJECT_NAME/post # preexisting post-processed data, slices
+      post_plot_spot: /home/ryb/worker/post-PROJECT_NAME/plot # preexisting plots
+      workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
+      specs_file: null # autodetected from repo
+
+  # "DEVELOPMENT" is a protected name that holds live code according to this example
   dev: 
     type: development
     calc: calc/PROJECT_NAME
