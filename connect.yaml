@@ -1,19 +1,17 @@
 # "NEW" brand new project
 project: 
   type: new
-  site: site/PROJECT_NAME
-  calc: calc/PROJECT_NAME
-  repo: calc/PROJECT_NAME
-  drop: data/project
+  site: site/PROJECT_NAME # django site location
+  calc: calc/PROJECT_NAME # omnicalc instance for this project
+  repo: calc/PROJECT_NAME/calcs # create or detect a git repo with project-specific calculation codes
   automacs: https://www.github.com/bradleyrp/automacs
   omnicalc: https://github.com/bradleyrp/omnicalc
-  repo: Null
   paths:
-    data_spots: []
-    dropspot: data/PROJECT_NAME/sims
+    data_spots: [] # preexisting simulation
+    dropspot: data/PROJECT_NAME/sims # new simulations
     post_data_spot: data/PROJECT_NAME/post # this overrides omnicalc default location
     post_plot_spot: data/PROJECT_NAME/plot # this overrides omnicalc default location
-    workspace_spot: data/PROJECT_NAME/workspace 
+    workspace_spot: data/PROJECT_NAME/workspace # a pickle which holds omnicalc variables
     specs_file: null # connect.py autodetects calc/PROJECT_NAME/calcs/specs/meta*.yaml
 
 # examples correspond to typical use cases
@@ -24,11 +22,9 @@ examples:
     type: new
     site: site/PROJECT_NAME
     calc: calc/PROJECT_NAME
-    repo: calc/PROJECT_NAME
-    drop: data/project
+    repo: calc/PROJECT_NAME/calcs
     automacs: https://www.github.com/bradleyrp/automacs
     omnicalc: https://github.com/bradleyrp/omnicalc
-    repo: Null
     paths:
       data_spots: ['data/PROJECT_NAME/sims']
       post_data_spot: data/PROJECT_NAME/post # this overrides omnicalc default location

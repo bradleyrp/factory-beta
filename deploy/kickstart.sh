@@ -57,6 +57,7 @@ if ! [[ -e data/$1/source  ]]; then mkdir data/$1/sources; fi
 git clone https://github.com/bradleyrp/omnicalc calc/$1 &> logs/log-$1-git-omni
 #---! docs assumes the dropspot path below
 git clone https://github.com/bradleyrp/automacs data/$1/sims/docs &> logs/log-$1-git-amx
+make -C data/$1/sims/docs docs
 make -C calc/$1/ config defaults &> logs/log-$1-omnicalc-config
 
 #---assemble celery codes
