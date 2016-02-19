@@ -21,8 +21,8 @@ if 'examples' in sets: del sets['examples']
 if devmode:
 	devkeys = [i for i in sets if sets[i]['type']=='development']
 	if len(devkeys)!=1: 
-		raise Exception('\n[ERROR] when using the develop option to connect.py you can only have one '+
-			'development type in the yaml file')
+		print '[WARNING] development mode found no "type: development" entries in %s so exiting'%sys.argv[1]
+		quit()
 	sets = dict([(key,val) for key,val in sets.items() if key==devkeys[0]])
 
 #---APPENDAGES
@@ -132,7 +132,6 @@ for connection_name,specs in sets.items():
 	#---! need to make the data spots directory from a list or a string here
 	#---kickstart packages the codes in dev, makes a new project, and updates settings.py and urls.py
 	if not devmode:
-		
 		subprocess.check_call('make kickstart %s %s %s'%(
 			connection_name,settings_append_fn,urls_append_fn),shell=True)
 
@@ -140,27 +139,29 @@ for connection_name,specs in sets.items():
 	if 'repo' in specs and not (not specs['repo'] or specs['repo']==''):
 		
 		#---remove blank calcs and local post/plot from default omnicalc configuration
-		for folder in ['post','post','calcs']:
+		for folder in ['post','plot','calcs']:
 			dn = 'calc/%s/%s'%(connection_name,folder)
 			if os.path.isdir(dn): shutil.rmtree(dn)
-		
-		#---clone the user's repo into calcs
-		print "[STATUS] cloning the user repo from %s"%specs['repo']
-		subprocess.check_call('git clone %s calcs'%specs['repo'],shell=True,cwd=specs['calc'])
 
-		#---modify the default paths in omnicalc to correspond to the paths defined above
+		#---if the repo points nowhere we prepare a calcs folder for omnicalc
+		new_calcs_repo = not (os.path.isdir(specs['repo']) and os.path.isdir(specs['repo']+'.git'))
+		if new_calcs_repo:
+			print "[WARNING] repo path %s does not exist so we are making a new one"%specs['repo']
+			mkdir_or_report(specs['calc']+'/calcs')
+			mkdir_or_report(specs['calc']+'/calcs/specs/')
+			subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs')
+			
+		#---given a previous omnicalc we consult paths.py in order to set up the new one
 		with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
 		default_paths = {}
 		if 'parse_specs' not in specs: paths_fn = specs['calc']+'/paths.py'
 		else: paths_fn = specs['parse_specs']
 		execfile(paths_fn,default_paths)
 		new_paths = deepcopy(default_paths['paths'])
-
 		new_paths['data_spots'] = specs['paths']['data_spots']
 		new_paths['post_data_spot'] = settings_paths['postspot']
 		new_paths['post_plot_spot'] = settings_paths['plotspot']
 		new_paths['workspace_spot'] = abspath(root_data_dir+'/workspace')
-		
 		#---specs files must be relative to the omnicalc root
 		if not specs['paths']['specs_file']:
 			#---automatically detect any yaml files in the specs folder

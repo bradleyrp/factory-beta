@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -f env ]]; then { echo "[STATUS] env already exists"; exit; }; fi
+if [[ -d env ]]; then { echo "[STATUS] env already exists"; exit; }; fi
 echo "[STATUS] setting up virtualenv"
 bash deploy/check_dependencies.sh || { exit 1; }
 #---use system packages for now however this is a HACK (problems with h5py headers)
