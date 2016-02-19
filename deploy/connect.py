@@ -150,8 +150,7 @@ for connection_name,specs in sets.items():
 		mkdir_or_report(specs['calc']+'/calcs/specs/')
 		subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs')
 	#---if the repo is a viable git repo then we clone it
-	else: 
-		subprocess.check_call('git clone '+specs['repo']+' '+specs['calc']+'/calcs',shell=True)
+	else: subprocess.check_call('git clone '+specs['repo']+' '+specs['calc']+'/calcs',shell=True)
 
 	#---given a previous omnicalc we consult paths.py in order to set up the new one
 
@@ -202,6 +201,10 @@ for connection_name,specs in sets.items():
 			'&> logs/log-dev-makemigrations')
 		os.system('source env/bin/activate && python dev/manage.py migrate '+
 			'&> logs/log-dev-migrate')
+
+	#---assimilate old data if available
+	subprocess.check_call('make -C '+specs['calc']+' export_to_factory %s %s'%
+		(connection_name,settings_paths['rootspot']+specs['site']),shell=True)
 
 	print "[STATUS] connected %s!"%connection_name
 	print "[STATUS] start with \"make run %s\""%connection_name
