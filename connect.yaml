@@ -4,9 +4,9 @@ project:
   site: site/PROJECT_NAME # django site location
   calc: calc/PROJECT_NAME # omnicalc instance for this project
   repo: calc/PROJECT_NAME/calcs # create or detect a git repo with project-specific calculation codes
-  automacs: https://www.github.com/bradleyrp/automacs
-  omnicalc: https://github.com/bradleyrp/omnicalc
-  paths:
+  automacs: https://www.github.com/bradleyrp/automacs # persistent source for simulator codes
+  omnicalc: https://github.com/bradleyrp/omnicalc # persistent source for calculator codes
+  paths: # distributed to both omnicalc and factory codes
     data_spots: [] # preexisting simulation
     dropspot: data/PROJECT_NAME/sims # new simulations
     post_data_spot: data/PROJECT_NAME/post # this overrides omnicalc default location

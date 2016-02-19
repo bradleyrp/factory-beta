@@ -55,3 +55,4 @@ bootstrap:
 #---erase everything and start from scratch
 nuke:
 	@bash deploy/nuke.sh || ( echo "[STATUS] fail" &&  exit 1 )
+	@/bin/echo "[STATUS] ready to connect"

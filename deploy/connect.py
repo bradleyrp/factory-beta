@@ -137,54 +137,51 @@ for connection_name,specs in sets.items():
 		subprocess.check_call('make kickstart %s %s %s'%(
 			connection_name,settings_append_fn,urls_append_fn),shell=True)
 
-	#---if a repo is specified, we modify the default configuration
-	if 'repo' in specs and not (not specs['repo'] or specs['repo']==''):
+	#---remove blank calcs and local post/plot from default omnicalc configuration
+	for folder in ['post','plot','calcs']:
+		dn = 'calc/%s/%s'%(connection_name,folder)
+		if os.path.isdir(dn): shutil.rmtree(dn)
+
+	#---if the repo points nowhere we prepare a calcs folder for omnicalc (repo is required)
+	new_calcs_repo = not (os.path.isdir(specs['repo']) and os.path.isdir(specs['repo']+'/.git'))
+	if new_calcs_repo:
+		print "[WARNING] repo path %s does not exist so we are making a new one"%specs['repo']
+		mkdir_or_report(specs['calc']+'/calcs')
+		mkdir_or_report(specs['calc']+'/calcs/specs/')
+		subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs')
 		
-		#---remove blank calcs and local post/plot from default omnicalc configuration
-		for folder in ['post','plot','calcs']:
-			dn = 'calc/%s/%s'%(connection_name,folder)
-			if os.path.isdir(dn): shutil.rmtree(dn)
+	#---given a previous omnicalc we consult paths.py in order to set up the new one
+	with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
+	default_paths = {}
+	if 'parse_specs' not in specs: paths_fn = specs['calc']+'/paths.py'
+	else: paths_fn = specs['parse_specs']
+	execfile(paths_fn,default_paths)
+	new_paths = deepcopy(default_paths['paths'])
+	new_paths['data_spots'] = specs['paths']['data_spots']
+	new_paths['post_data_spot'] = settings_paths['postspot']
+	new_paths['post_plot_spot'] = settings_paths['plotspot']
+	new_paths['workspace_spot'] = abspath(root_data_dir+'/workspace')
+	#---specs files must be relative to the omnicalc root
+	if not specs['paths']['specs_file']:
+		#---automatically detect any yaml files in the specs folder
+		new_paths['specs_file'] = glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')
+	else:
+		custom_specs = specs['paths']['specs_file']
+		if type(custom_specs)==str: custom_specs = [custom_specs]
+		new_paths['specs_file'] = ['calcs/specs/'+os.path.basename(fn) 
+			for fn in glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')]
+	new_paths_file = {'paths':new_paths,'parse_specs':default_paths['parse_specs']}
+	with open(specs['calc']+'/paths.py','w') as fp:
+		fp.write('#!/usr/bin/python\n\n')
+		for key in new_paths_file:
+			fp.write('%s = %s\n\n'%(key,
+			json.dumps(new_paths_file[key],indent=4,ensure_ascii=False).
+			replace('\\\\','\\').replace('    ','\t')))
 
-		#---if the repo points nowhere we prepare a calcs folder for omnicalc
-		new_calcs_repo = not (os.path.isdir(specs['repo']) and os.path.isdir(specs['repo']+'.git'))
-		if new_calcs_repo:
-			print "[WARNING] repo path %s does not exist so we are making a new one"%specs['repo']
-			mkdir_or_report(specs['calc']+'/calcs')
-			mkdir_or_report(specs['calc']+'/calcs/specs/')
-			subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs')
-			
-		#---given a previous omnicalc we consult paths.py in order to set up the new one
-		with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
-		default_paths = {}
-		if 'parse_specs' not in specs: paths_fn = specs['calc']+'/paths.py'
-		else: paths_fn = specs['parse_specs']
-		execfile(paths_fn,default_paths)
-		new_paths = deepcopy(default_paths['paths'])
-		new_paths['data_spots'] = specs['paths']['data_spots']
-		new_paths['post_data_spot'] = settings_paths['postspot']
-		new_paths['post_plot_spot'] = settings_paths['plotspot']
-		new_paths['workspace_spot'] = abspath(root_data_dir+'/workspace')
-		#---specs files must be relative to the omnicalc root
-		if not specs['paths']['specs_file']:
-			#---automatically detect any yaml files in the specs folder
-			new_paths['specs_file'] = glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')
-		else:
-			custom_specs = specs['paths']['specs_file']
-			if type(custom_specs)==str: custom_specs = [custom_specs]
-			new_paths['specs_file'] = ['calcs/specs/'+os.path.basename(fn) 
-				for fn in glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')]
-		new_paths_file = {'paths':new_paths,'parse_specs':default_paths['parse_specs']}
-		with open(specs['calc']+'/paths.py','w') as fp:
-			fp.write('#!/usr/bin/python\n\n')
-			for key in new_paths_file:
-				fp.write('%s = %s\n\n'%(key,
-				json.dumps(new_paths_file[key],indent=4,ensure_ascii=False).
-				replace('\\\\','\\').replace('    ','\t')))
-
-		#---previous omnicalc users may have a specific gromacs.py that they wish to use
-		if 'omni_gromacs_config' in specs and not not specs['omni_gromacs_config']:
-			gromacs_fn = os.path.abspath(os.path.expanduser(specs['omni_gromacs_config']))
-			shutil.copyfile(gromacs_fn,specs['calc']+'/gromacs.py')
+	#---previous omnicalc users may have a specific gromacs.py that they wish to use
+	if 'omni_gromacs_config' in specs and not not specs['omni_gromacs_config']:
+		gromacs_fn = os.path.abspath(os.path.expanduser(specs['omni_gromacs_config']))
+		shutil.copyfile(gromacs_fn,specs['calc']+'/gromacs.py')
 
 	#---extra commands for develpment
 	if devmode:
@@ -202,4 +199,5 @@ for connection_name,specs in sets.items():
 		os.system('source env/bin/activate && python dev/manage.py migrate '+
 			'&> logs/log-dev-migrate')
 
-	print "[STATUS] complete!\n[STATUS] start with \"make run %s\""%connection_name
+	print "[STATUS] connected %s!"%connection_name
+	print "[STATUS] start with \"make run %s\""%connection_name

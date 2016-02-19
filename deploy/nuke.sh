@@ -66,7 +66,7 @@ echo "[STATUS] deleting ./calc/*"
 rm -rf ./calc/*
 echo "[STATUS] deleting ./site/*"
 rm -rf ./site/*
-make bootstrap
+make -s bootstrap
 
 <<deprecated
 
