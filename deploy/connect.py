@@ -112,7 +112,7 @@ for connection_name,specs in sets.items():
 		'postspot':abspath(specs['paths']['post_data_spot']),
 		'dropspot':abspath(specs['paths']['dropspot']),
 		'calcspot':specs['calc'],
-		'rootspot':os.getcwd(),
+		'rootspot':os.path.join(os.getcwd(),''),
 		}
 
 	#---prepare additions to the settings.py and urls.py
