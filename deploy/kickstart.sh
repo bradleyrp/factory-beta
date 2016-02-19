@@ -50,12 +50,13 @@ cat $3 >> site/$1/$1/urls.py
 #sed -i "s/os.path.join(BASE_DIR, 'db.sqlite3')/os.path.join(os.path.abspath(BASE_DIR)+'\/..\/..\/data\/$1','db.sqlite3')/g" site/$1/$1/settings.py
 
 #---create data directories
-mkdir data/$1 || echo "[NOTE] data directory already exists: data/$1"
-mkdir data/$1/sources  || echo "[NOTE] so does data/$1/sources"
+if ! [[ -e data/$1  ]]; then mkdir data/$1; fi 
+if ! [[ -e data/$1/source  ]]; then mkdir data/$1/sources; fi 
 
 #---clone and configure external codes
 git clone https://github.com/bradleyrp/omnicalc calc/$1 &> logs/log-$1-git-omni
-git clone https://github.com/bradleyrp/automacs data/$1/docs &> logs/log-$1-git-amx
+#---! docs assumes the dropspot path below
+git clone https://github.com/bradleyrp/automacs data/$1/sims/docs &> logs/log-$1-git-amx
 make -C calc/$1/ config defaults &> logs/log-$1-omnicalc-config
 
 #---assemble celery codes

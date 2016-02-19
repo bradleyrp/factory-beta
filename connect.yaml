@@ -1,18 +1,20 @@
-ptdins:
-  type: existing omnicalc
-  site: site/PROJECT_NAME  
+# "NEW" brand new project
+project: 
+  type: new
+  site: site/PROJECT_NAME
   calc: calc/PROJECT_NAME
-  repo: /home/ryb/worker/analysis/omnicalc-ryb/calcs
-  database: site/PROJECT_NAME/db.factory.sqlite3
+  repo: calc/PROJECT_NAME
+  drop: data/project
+  automacs: https://www.github.com/bradleyrp/automacs
   omnicalc: https://github.com/bradleyrp/omnicalc
-  automacs: http://www.github.com/bradleyrp/automacs
-  paths: # all maths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
-    data_spots: ['/home/localshare/membrane-v5xx'] # preexisting simulations
-    dropspot: data/PROJECT_NAME/sims # new simulations and simulator docs
-    post_data_spot: /home/ryb/worker/post-PROJECT_NAME/post # preexisting post-processed data, slices
-    post_plot_spot: /home/ryb/worker/post-PROJECT_NAME/plot # preexisting plots
-    workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
-    specs_file: null # autodetected from repo
+  repo: Null
+  paths:
+    data_spots: []
+    dropspot: data/PROJECT_NAME/sims
+    post_data_spot: data/PROJECT_NAME/post # this overrides omnicalc default location
+    post_plot_spot: data/PROJECT_NAME/plot # this overrides omnicalc default location
+    workspace_spot: data/PROJECT_NAME/workspace 
+    specs_file: null # connect.py autodetects calc/PROJECT_NAME/calcs/specs/meta*.yaml
 
 # examples correspond to typical use cases
 examples: 
@@ -20,10 +22,19 @@ examples:
   # "NEW" brand new project
   project: 
     type: new
+    site: site/PROJECT_NAME
+    calc: calc/PROJECT_NAME
+    repo: calc/PROJECT_NAME
     drop: data/project
     automacs: https://www.github.com/bradleyrp/automacs
     omnicalc: https://github.com/bradleyrp/omnicalc
     repo: Null
+    paths:
+      data_spots: ['data/PROJECT_NAME/sims']
+      post_data_spot: data/PROJECT_NAME/post # this overrides omnicalc default location
+      post_plot_spot: data/PROJECT_NAME/plot # this overrides omnicalc default location
+      workspace_spot: data/PROJECT_NAME/workspace 
+      specs_file: null # connect.py autodetects calc/PROJECT_NAME/calcs/specs/meta*.yaml
 
   # "NO POST" the user has simulations and analysis codes ("repo") but no post data
   existing_project_no_post:  
@@ -36,6 +47,7 @@ examples:
     automacs: http://www.github.com/bradleyrp/automacs # latest automacs
     paths:
       data_spots: ['/path/to/simulations']
+      dropspot: data/PROJECT_NAME/sims
       post_data_spot: data/PROJECT_NAME/post # this overrides omnicalc default location
       post_plot_spot: data/PROJECT_NAME/plot # this overrides omnicalc default location
       workspace_spot: data/PROJECT_NAME/workspace 
@@ -46,13 +58,15 @@ examples:
     type: existing omnicalc
     site: site/PROJECT_NAME  
     calc: calc/PROJECT_NAME
-    repo: /home/localshare/analysis/omnicalc-ptdins/calcs
+    repo: /home/ryb/worker/analysis/omnicalc-ryb/calcs
+    database: site/PROJECT_NAME/db.factory.sqlite3
     omnicalc: https://github.com/bradleyrp/omnicalc
     automacs: http://www.github.com/bradleyrp/automacs
-    paths:
-      data_spots: ['/home/localshare/membrane-v5xx']
-      post_data_spot: /home/localshare/post-PROJECT_NAME/post # preexisting post-processed data, slices
-      post_plot_spot: /home/localshare/post-PROJECT_NAME/plot # preexisting plots
+    paths: # all maths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
+      data_spots: ['/home/localshare/membrane-v5xx'] # preexisting simulations
+      dropspot: data/PROJECT_NAME/sims # new simulations and simulator docs
+      post_data_spot: /home/ryb/worker/post-PROJECT_NAME/post # preexisting post-processed data, slices
+      post_plot_spot: /home/ryb/worker/post-PROJECT_NAME/plot # preexisting plots
       workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
       specs_file: null # autodetected from repo
 

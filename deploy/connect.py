@@ -20,10 +20,12 @@ if 'examples' in sets: del sets['examples']
 #---develop flag restricts attention only to the single develop entry
 if devmode:
 	devkeys = [i for i in sets if sets[i]['type']=='development']
-	if len(devkeys)!=1: 
-		print '[WARNING] development mode found no "type: development" entries in %s so exiting'%sys.argv[1]
-		quit()
-	sets = dict([(key,val) for key,val in sets.items() if key==devkeys[0]])
+	if len(devkeys)>1: 
+		raise Exception('\n[ERROR] when using the develop option to connect.py you can only have one '+
+			'development type in the yaml file')
+	elif len(devkeys)==1:
+		sets = dict([(key,val) for key,val in sets.items() if key==devkeys[0]])
+	else: devmode = False
 
 #---APPENDAGES
 #-------------------------------------------------------------------------------------------------------------
@@ -199,3 +201,5 @@ for connection_name,specs in sets.items():
 			'&> logs/log-dev-makemigrations')
 		os.system('source env/bin/activate && python dev/manage.py migrate '+
 			'&> logs/log-dev-migrate')
+
+	print "[STATUS] complete!\n[STATUS] start with \"make run %s\""%connection_name
