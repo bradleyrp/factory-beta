@@ -16,7 +16,7 @@ PID=$(screen -ls | awk '/\.worker_sim\t/ {print strtonum($1)}')
 if ! [ -z $PID ]; then kill -KILL $PID; fi
 PID=$(screen -ls | awk '/\.worker_calc\t/ {print strtonum($1)}')
 if ! [ -z $PID ]; then kill -KILL $PID; fi
-rm /tmp/screenrc
+rm -f /tmp/screenrc
 screen -wipe &> /dev/null
 echo "[SERVE] see log/log-serve for messages"
 echo "[STATUS] bye"

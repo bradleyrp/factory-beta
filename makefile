@@ -55,4 +55,3 @@ bootstrap:
 #---erase everything and start from scratch
 nuke:
 	@bash deploy/nuke.sh || ( echo "[STATUS] fail" &&  exit 1 )
-	@python deploy/connect.py connect.yaml DEVELOP || ( echo "[STATUS] fail" &&  exit 1 )
