@@ -26,7 +26,7 @@ examples:
     automacs: https://www.github.com/bradleyrp/automacs
     omnicalc: https://github.com/bradleyrp/omnicalc
     paths:
-      data_spots: ['data/PROJECT_NAME/sims']
+      data_spots: []
       post_data_spot: data/PROJECT_NAME/post # this overrides omnicalc default location
       post_plot_spot: data/PROJECT_NAME/plot # this overrides omnicalc default location
       workspace_spot: data/PROJECT_NAME/workspace 

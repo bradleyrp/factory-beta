@@ -149,7 +149,9 @@ for connection_name,specs in sets.items():
 		mkdir_or_report(specs['calc']+'/calcs')
 		mkdir_or_report(specs['calc']+'/calcs/specs/')
 		subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs')
-		
+	#---if the repo is a viable git repo then we clone it
+	else: subprocess.check_call('git clone '+specs['repo']+' '+specs['calc']+'/calcs')
+
 	#---given a previous omnicalc we consult paths.py in order to set up the new one
 	with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
 	default_paths = {}
