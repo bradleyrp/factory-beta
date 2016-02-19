@@ -49,7 +49,7 @@ examples:
       workspace_spot: data/PROJECT_NAME/workspace 
       specs_file: null # connect.py autodetects calc/PROJECT_NAME/calcs/specs/meta*.yaml
 
-  # "EXISTING" user has simulation, post, plots, and omnicalc code
+  # "EXISTING" user has simulation, post, plots, and omnicalc code (rpb ptdins example)
   ptdins:
     type: existing omnicalc
     site: site/PROJECT_NAME  
@@ -66,7 +66,7 @@ examples:
       workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
       specs_file: null # autodetected from repo
 
-  # "NO REPO"
+  # "NO REPO" (rpb adhesion example, tested)
   adhesion:
     type: existing omnicalc
     site: site/PROJECT_NAME  
