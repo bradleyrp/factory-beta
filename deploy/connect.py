@@ -139,6 +139,8 @@ for connection_name,specs in sets.items():
 	else: 
 		subprocess.check_call("git clone %s calc/dev &> logs/log-dev-clone-omni"%specs['omnicalc'],
 			shell=True,executable='/bin/bash')
+		subprocess.check_call("make -C calc/dev config defaults &> logs/log-dev-omni-config",
+			shell=True,executable='/bin/bash')
 
 	#---remove blank calcs and local post/plot from default omnicalc configuration
 	for folder in ['post','plot','calcs']:
@@ -195,8 +197,6 @@ for connection_name,specs in sets.items():
 
 		subprocess.check_call("git clone https://github.com/bradleyrp/automacs data/dev/sims/docs "+
 			"&> logs/log-dev-clone-sims",shell=True,executable='/bin/bash')
-		subprocess.check_call("make -C calc/dev config defaults &> logs/log-dev-omni-config",
-			shell=True,executable='/bin/bash')
 		subprocess.check_call("make -C data/dev/sims/docs docs &> logs/log-dev-sims-docs",
 			shell=True,executable='/bin/bash')
 		subprocess.check_call(
