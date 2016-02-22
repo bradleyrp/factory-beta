@@ -136,6 +136,9 @@ for connection_name,specs in sets.items():
 	if not devmode:
 		subprocess.check_call('make kickstart %s %s %s'%(
 			connection_name,settings_append_fn,urls_append_fn),shell=True)
+	else: 
+		os.system("git clone %s calc/dev "%specs['omnicalc']+
+			"&> logs/log-dev-clone-omni")
 
 	#---remove blank calcs and local post/plot from default omnicalc configuration
 	for folder in ['post','plot','calcs']:
@@ -149,6 +152,7 @@ for connection_name,specs in sets.items():
 		mkdir_or_report(specs['calc']+'/calcs')
 		mkdir_or_report(specs['calc']+'/calcs/specs/')
 		subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs')
+		#---AUTO POPULATE WITH CALCULATIONS
 	#---if the repo is a viable git repo then we clone it
 	else: subprocess.check_call('git clone '+specs['repo']+' '+specs['calc']+'/calcs',shell=True)
 
@@ -189,8 +193,6 @@ for connection_name,specs in sets.items():
 	#---extra commands for develpment
 	if devmode:
 
-		os.system("git clone https://www.github.com/bradleyrp/omnicalc calc/dev "+
-			"&> logs/log-dev-clone-omni")
 		os.system("git clone https://github.com/bradleyrp/automacs data/dev/sims/docs "+
 			"&> logs/log-dev-clone-sims")
 		os.system("make -C calc/dev config defaults &> logs/log-dev-omni-config")
@@ -203,8 +205,8 @@ for connection_name,specs in sets.items():
 			'&> logs/log-dev-migrate')
 
 	#---assimilate old data if available
-	subprocess.check_call('make -C '+specs['calc']+' export_to_factory %s %s'%
-		(connection_name,settings_paths['rootspot']+specs['site']),shell=True)
+	subprocess.check_call('source env/bin/activate && make -C '+specs['calc']+' export_to_factory %s %s'%
+		(connection_name,settings_paths['rootspot']+specs['site']),shell=True,executable='/bin/bash')
 
 	print "[STATUS] connected %s!"%connection_name
 	print "[STATUS] start with \"make run %s\""%connection_name
