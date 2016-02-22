@@ -195,10 +195,13 @@ for connection_name,specs in sets.items():
 	#---extra commands for develpment
 	if devmode:
 
-		subprocess.check_call("git clone https://github.com/bradleyrp/automacs data/dev/sims/docs "+
-			"&> logs/log-dev-clone-sims",shell=True,executable='/bin/bash')
-		try: subprocess.check_call("make -C data/dev/sims/docs docs &> logs/log-dev-sims-docs",
-			shell=True,executable='/bin/bash')
+		try: 
+			subprocess.check_call("git clone https://github.com/bradleyrp/automacs data/dev/sims/docs "+
+				"&> logs/log-dev-clone-sims",shell=True,executable='/bin/bash')
+		except: pass
+		try:
+			subprocess.check_call("make -C data/dev/sims/docs docs &> logs/log-dev-sims-docs",
+				shell=True,executable='/bin/bash')
 		except: pass
 		subprocess.check_call(
 			'echo "from django.contrib.auth.models import User;User.objects.create_superuser'+
