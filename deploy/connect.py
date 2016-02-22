@@ -137,7 +137,8 @@ for connection_name,specs in sets.items():
 		subprocess.check_call('make kickstart %s %s %s'%(
 			connection_name,settings_append_fn,urls_append_fn),shell=True)
 	else: 
-		subprocess.check_call("git clone %s calc/dev &> logs/log-dev-clone-omni"%specs['omnicalc'])
+		subprocess.check_call("git clone %s calc/dev &> logs/log-dev-clone-omni"%specs['omnicalc'],
+			shell=True,executable='/bin/bash')
 
 	#---remove blank calcs and local post/plot from default omnicalc configuration
 	for folder in ['post','plot','calcs']:
