@@ -137,8 +137,7 @@ for connection_name,specs in sets.items():
 		subprocess.check_call('make kickstart %s %s %s'%(
 			connection_name,settings_append_fn,urls_append_fn),shell=True)
 	else: 
-		os.system("git clone %s calc/dev "%specs['omnicalc']+
-			"&> logs/log-dev-clone-omni")
+		subprocess.check_call("git clone %s calc/dev &> logs/log-dev-clone-omni"%specs['omnicalc'])
 
 	#---remove blank calcs and local post/plot from default omnicalc configuration
 	for folder in ['post','plot','calcs']:
@@ -193,16 +192,20 @@ for connection_name,specs in sets.items():
 	#---extra commands for develpment
 	if devmode:
 
-		os.system("git clone https://github.com/bradleyrp/automacs data/dev/sims/docs "+
-			"&> logs/log-dev-clone-sims")
-		os.system("make -C calc/dev config defaults &> logs/log-dev-omni-config")
-		os.system("make -C data/dev/sims/docs docs &> logs/log-dev-sims-docs")
-		os.system('echo "from django.contrib.auth.models import User;User.objects.create_superuser'+
-			'(\'admin\',\'\',\'admin\');print;quit();" | python ./dev/manage.py shell &> /dev/null')
-		os.system('source env/bin/activate && python dev/manage.py makemigrations '+
-			'&> logs/log-dev-makemigrations')
-		os.system('source env/bin/activate && python dev/manage.py migrate '+
-			'&> logs/log-dev-migrate')
+		subprocess.check_call("git clone https://github.com/bradleyrp/automacs data/dev/sims/docs "+
+			"&> logs/log-dev-clone-sims",shell=True,executable='/bin/bash')
+		subprocess.check_call("make -C calc/dev config defaults &> logs/log-dev-omni-config",
+			shell=True,executable='/bin/bash')
+		subprocess.check_call("make -C data/dev/sims/docs docs &> logs/log-dev-sims-docs",
+			shell=True,executable='/bin/bash')
+		subprocess.check_call(
+			'echo "from django.contrib.auth.models import User;User.objects.create_superuser'+
+			'(\'admin\',\'\',\'admin\');print;quit();" | python ./dev/manage.py shell &> /dev/null',
+			shell=True,executable='/bin/bash')
+		subprocess.check_call('source env/bin/activate && python dev/manage.py makemigrations '+
+			'&> logs/log-dev-makemigrations',shell=True,executable='/bin/bash')
+		subprocess.check_call('source env/bin/activate && python dev/manage.py migrate '+
+			'&> logs/log-dev-migrate',shell=True,executable='/bin/bash')
 
 	#---assimilate old data if available
 	subprocess.check_call('source env/bin/activate && make -C '+specs['calc']+' export_to_factory %s %s'%
