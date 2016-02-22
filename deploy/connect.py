@@ -203,18 +203,24 @@ for connection_name,specs in sets.items():
 			subprocess.check_call("make -C data/dev/sims/docs docs &> logs/log-dev-sims-docs",
 				shell=True,executable='/bin/bash')
 		except: pass
-		subprocess.check_call(
-			'echo "from django.contrib.auth.models import User;User.objects.create_superuser'+
-			'(\'admin\',\'\',\'admin\');print;quit();" | python ./dev/manage.py shell &> /dev/null',
-			shell=True,executable='/bin/bash')
+		try:
+			subprocess.check_call(
+				'echo "from django.contrib.auth.models import User;User.objects.create_superuser'+
+				'(\'admin\',\'\',\'admin\');print;quit();" | python ./dev/manage.py shell &> /dev/null',
+				shell=True,executable='/bin/bash')
+		except: pass
 		subprocess.check_call('source env/bin/activate && python dev/manage.py makemigrations '+
 			'&> logs/log-dev-makemigrations',shell=True,executable='/bin/bash')
 		subprocess.check_call('source env/bin/activate && python dev/manage.py migrate '+
 			'&> logs/log-dev-migrate',shell=True,executable='/bin/bash')
 
 	#---assimilate old data if available
-	subprocess.check_call('source env/bin/activate && make -C '+specs['calc']+' export_to_factory %s %s'%
-		(connection_name,settings_paths['rootspot']+specs['site']),shell=True,executable='/bin/bash')
+	if not devmode:
+		subprocess.check_call('source env/bin/activate && make -C '+specs['calc']+' export_to_factory %s %s'%
+			(connection_name,settings_paths['rootspot']+specs['site']),shell=True,executable='/bin/bash')
+	else:
+		subprocess.check_call('source env/bin/activate && make -C '+specs['calc']+' export_to_factory %s %s'%
+			(connection_name,settings_paths['rootspot']+'/dev/'),shell=True,executable='/bin/bash')
 
 	print "[STATUS] connected %s!"%connection_name
 	print "[STATUS] start with \"make run %s\""%connection_name
