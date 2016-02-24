@@ -19,3 +19,5 @@ make shutdown && make depack && make package calculator && make package simulato
 # start from scratch
 
 make nuke && make connect connect.yaml && source env/bin/activate && make -C calc/$PROJECT_NAME export_to_factory $PROJECT_NAME ../../site/$PROJECT_NAME && make run $PROJECT_NAME
+
+make nuke && make bootstrap easy && make connect connect.dark.yaml

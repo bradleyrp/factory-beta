@@ -72,7 +72,6 @@ class BackgroundJob(models.Model):
 		verbose_name = 'Background Job'
 	def __str__(self): return 'PID '+str(self.pid)
 	pid = models.IntegerField(default=-1)
-	print os.getcwd()
 	simulation = models.ForeignKey(Simulation,on_delete=models.CASCADE)
 
 	

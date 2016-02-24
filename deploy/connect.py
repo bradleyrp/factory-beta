@@ -3,6 +3,11 @@
 """
 Interpret a user input (typically connect.yaml) in order to set up the "factory".
 See connect.yaml for example connections.
+
+Should we delete the site before connecting? Leave everything else??
+
+DEVMODE is deprecated and needs deleted
+ALSO TYPE DOES NOTHING.
 """
 
 import os,sys,re,subprocess,shutil,glob,json
@@ -89,12 +94,14 @@ for connection_name,specs in sets.items():
 	#---regex PROJECT_NAME to the connection name in the paths sub-dictionary
 	for key,val in specs['paths'].items(): 
 		if type(val)==list: 
-			for item in val: item = re.sub('PROJECT_NAME',connection_name,item)
+			for ii,i in enumerate(val): val[ii] = re.sub('PROJECT_NAME',connection_name,i)
 		else: 
-			if not not val: specs['paths'][key] = re.sub('PROJECT_NAME',connection_name,val)
+			if val: specs['paths'][key] = re.sub('PROJECT_NAME',connection_name,val)
 	for key,val in specs.items():
 		if type(val)==str: specs[key] = re.sub('PROJECT_NAME',connection_name,val)
-	
+		elif type(val)==list:
+			for ii,i in enumerate(val): val[ii] = re.sub('PROJECT_NAME',connection_name,i)
+
 	#---make directories if they are absent
 	#---! is this necessary?
 	root_data_dir = 'data/'+connection_name
@@ -119,7 +126,10 @@ for connection_name,specs in sets.items():
 	settings_append_fn = 'logs/setup-%s-settings-append.py'%connection_name
 	urls_append_fn = 'logs/setup-%s-urls-append.py'%connection_name
 	with open(settings_append_fn,'w') as fp:
-		fp.write(setings_additions)
+		if 'development' in specs and specs['development']: 
+			devpath = "import sys;sys.path.insert(0,os.getcwd()+'/dev/')" 
+		else: devpath = ""
+		fp.write(devpath+setings_additions)
 		for key,val in settings_paths.items():
 			fp.write('%s = "%s"\n'%(key.upper(),val))
 		for key in ['PLOTSPOT','POSTSPOT','ROOTSPOT']: 
@@ -134,7 +144,7 @@ for connection_name,specs in sets.items():
 	#---! need to make the data spots directory from a list or a string here
 	#---kickstart packages the codes in dev, makes a new project, and updates settings.py and urls.py
 	if not devmode:
-		subprocess.check_call('make kickstart %s %s %s'%(
+		subprocess.check_call('make -s kickstart %s %s %s'%(
 			connection_name,settings_append_fn,urls_append_fn),shell=True)
 	else: 
 		subprocess.check_call("git clone %s calc/dev &> logs/log-dev-clone-omni"%specs['omnicalc'],
@@ -150,20 +160,20 @@ for connection_name,specs in sets.items():
 	#---if the repo points nowhere we prepare a calcs folder for omnicalc (repo is required)
 	new_calcs_repo = not (os.path.isdir(specs['repo']) and os.path.isdir(specs['repo']+'/.git'))
 	if new_calcs_repo:
-		print "[WARNING] repo path %s does not exist so we are making a new one"%specs['repo']
+		print "[STATUS] repo path %s does not exist so we are making a new one"%specs['repo']
 		mkdir_or_report(specs['calc']+'/calcs')
 		mkdir_or_report(specs['calc']+'/calcs/specs/')
+		mkdir_or_report(specs['calc']+'/calcs/specs/scripts/')
 		subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs')
 		#---AUTO POPULATE WITH CALCULATIONS
 	#---if the repo is a viable git repo then we clone it
 	else: subprocess.check_call('git clone '+specs['repo']+' '+specs['calc']+'/calcs',shell=True)
 
 	#---given a previous omnicalc we consult paths.py in order to set up the new one
-
 	with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
 	default_paths = {}
-	if 'parse_specs' not in specs: paths_fn = specs['calc']+'/paths.py'
-	else: paths_fn = specs['parse_specs']
+	if 'parse_specs_config' not in specs: paths_fn = specs['calc']+'/paths.py'
+	else: paths_fn = specs['parse_specs_config']
 	execfile(paths_fn,default_paths)
 	new_paths = deepcopy(default_paths['paths'])
 	new_paths['data_spots'] = specs['paths']['data_spots']
@@ -188,7 +198,7 @@ for connection_name,specs in sets.items():
 			replace('\\\\','\\').replace('    ','\t')))
 
 	#---previous omnicalc users may have a specific gromacs.py that they wish to use
-	if 'omni_gromacs_config' in specs and not not specs['omni_gromacs_config']:
+	if 'omni_gromacs_config' in specs and specs['omni_gromacs_config']:
 		gromacs_fn = os.path.abspath(os.path.expanduser(specs['omni_gromacs_config']))
 		shutil.copyfile(gromacs_fn,specs['calc']+'/gromacs.py')
 
@@ -215,12 +225,13 @@ for connection_name,specs in sets.items():
 			'&> logs/log-dev-migrate',shell=True,executable='/bin/bash')
 
 	#---assimilate old data if available
-	if not devmode:
-		subprocess.check_call('source env/bin/activate && make -C '+specs['calc']+' export_to_factory %s %s'%
-			(connection_name,settings_paths['rootspot']+specs['site']),shell=True,executable='/bin/bash')
-	else:
-		subprocess.check_call('source env/bin/activate && make -C '+specs['calc']+' export_to_factory %s %s'%
-			(connection_name,settings_paths['rootspot']+'/dev/'),shell=True,executable='/bin/bash')
+	if 1:
+		if not devmode:
+			subprocess.check_call('source env/bin/activate && make -s -C '+specs['calc']+' export_to_factory %s %s'%
+				(connection_name,settings_paths['rootspot']+specs['site']),shell=True,executable='/bin/bash')
+		else:
+			subprocess.check_call('source env/bin/activate && make -C '+specs['calc']+' export_to_factory %s %s'%
+				(connection_name,settings_paths['rootspot']+'/dev/'),shell=True,executable='/bin/bash')
 
 	print "[STATUS] connected %s!"%connection_name
 	print "[STATUS] start with \"make run %s\""%connection_name

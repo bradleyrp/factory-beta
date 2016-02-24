@@ -1,12 +1,11 @@
 
-#---INTERFACE TO CONTROLLER
-#-------------------------------------------------------------------------------------------------------------
+### INTERFACE TO CONTROLLER
 
 #---filter and evaluate
 -include banner
 RUN_ARGS_UNFILTER := $(wordlist 1,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 RUN_ARGS := $(filter-out banner run shutdown shell kickstart package bootstrap \
-	reset connect reconnect wipe devclean nuke help,$(RUN_ARGS_UNFILTER))
+	reset connect nuke help env,$(RUN_ARGS_UNFILTER))
 $(eval $(RUN_ARGS):;@:)
 
 #---show the banner if no targets
@@ -36,8 +35,8 @@ shutdown:
 shell: 
 	@bash deploy/shell.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 
-#---kickstart a new project
-kickstart: bootstrap
+#---kickstart a new project (requires three arguments, managed by connect.py)
+kickstart: env
 	@bash deploy/kickstart.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 
 #---package a multiplexer app in a standalone folder and install
@@ -49,10 +48,11 @@ depack:
 	@bash deploy/depack.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 	
 #---delete and recreate the virtualenv
-bootstrap:
-	@bash deploy/bootstrap.sh || ( echo "[STATUS] fail" &&  exit 1 )
+env:
+	@bash deploy/bootstrap.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 
 #---erase everything and start from scratch
 nuke:
-	@bash deploy/nuke.sh || ( echo "[STATUS] fail" &&  exit 1 )
-	@/bin/echo "[STATUS] ready to connect"
+	@bash deploy/nuke.sh || ( echo "[STATUS] fail";  exit 1 )
+	@/bin/echo "[STATUS] so lonely"
+	@/bin/echo "[STATUS] bootstrap to continue"

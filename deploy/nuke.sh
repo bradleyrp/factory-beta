@@ -38,7 +38,7 @@ notes
 
 #---no enter if you use the -n 1 flag below
 read -p "[QUESTION] \"nuke\" starts entirely from scratch. continue (y/N)? " -r
-if [[ $REPLY =~ ^[Yy]$ ]]; then echo "[STATUS] reconnecting"
+if [[ $REPLY =~ ^[Yy]$ ]]; then echo "[STATUS] nuking"
 else exit 1; fi
 
 echo "[STATUS] automatically resetting"
@@ -66,30 +66,3 @@ echo "[STATUS] deleting ./calc/*"
 rm -rf ./calc/*
 echo "[STATUS] deleting ./site/*"
 rm -rf ./site/*
-make -s bootstrap
-
-<<deprecated
-
-# these functions were incorporated into connect.py via the dev entry in the yaml file
-
-#---note that the following sequence mimics kickstarter, customized for development
-#---! integrate the development setup into the kickstarter to handing different development paths
-
-make bootstrap
-mkdir data/dev
-mkdir data/dev/sims
-mkdir data/dev/sims/sources
-mkdir data/dev/plot
-mkdir data/dev/post
-source env/bin/activate
-git clone https://www.github.com/bradleyrp/omnicalc calc/dev
-git clone https://github.com/bradleyrp/automacs data/dev/sims/docs
-make -C calc/dev config defaults
-make -C data/dev/sims/docs docs
-python dev/manage.py makemigrations
-python dev/manage.py migrate
-echo \
-"from django.contrib.auth.models import User;User.objects.create_superuser('admin','','admin');print;quit();"|\
-python ./dev/manage.py shell &> /dev/null
-
-deprecated
