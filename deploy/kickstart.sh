@@ -3,6 +3,8 @@
 <<'notes'
 Kickstart a new DJANGO project and automatically add the simulator to it.
 Note that we use strict argument ordering because makefile calls this script.
+This is only called by connect.py even though it's accessible from make. 
+It might be worth incorporating this into python.
 notes
 
 #---arguments
@@ -44,6 +46,9 @@ git clone https://github.com/bradleyrp/omnicalc calc/$1 &> logs/log-$1-git-omni
 git clone https://github.com/bradleyrp/automacs data/$1/sims/docs &> logs/log-$1-git-amx
 make -C data/$1/sims/docs docs &> logs/log-$1-docs
 make -C calc/$1/ config defaults &> logs/log-$1-omnicalc-config
+if ! [[ -e calc/$1/calcs ]]; then mkdir calc/$1/calcs; fi 
+if ! [[ -e calc/$1/calcs/scripts ]]; then mkdir calc/$1/calcs/scripts; touch calc/$1/calcs/scripts/__init__.py; fi 
+make -C calc/$1/ docs &> logs/log-$1-omnicalc-docs
 
 #---assemble celery codes
 cp deploy/celery.py site/$1/$1/celery.py

@@ -1,23 +1,26 @@
                           
+    ___                                    
+   / __)              _                    
+ _| |__ _____  ____ _| |_ ___   ____ _   _ 
+(_   __|____ |/ ___|_   _) _ \ / ___) | | |
+  | |  / ___ ( (___  | || |_| | |   | |_| |
+  |_|  \_____|\____)  \__)___/|_|    \__  |
+                                    (____/ 
 
-   _|               |                       
-  |     _` |   __|  __|   _ \    __|  |   | 
-  __|  (   |  (     |    (   |  |     |   | 
- _|   \__,_| \___| \__| \___/  _|    \__, | 
-                                     ____/  
-
-            "one-to-many"
+             "one-to-many"
 
 [NOTE] use 'make help' for details
 
-# refresh connections to project data
-make connect connect.yaml
-
-# test updates to a package in a live project:
-make shutdown && make depack && make package calculator && make package simulator && make run ptdins
-
 # start from scratch
 
-make nuke && make connect connect.yaml && source env/bin/activate && make -C calc/$PROJECT_NAME export_to_factory $PROJECT_NAME ../../site/$PROJECT_NAME && make run $PROJECT_NAME
+Set up the <connect.yaml> with the appropriate name and paths. Decide whether you want an isolated virtual environment (which can be slow) or use the system flag below to use global site packages.
 
-make nuke && make bootstrap easy && make connect connect.dark.yaml
+make nuke && make env [system] && make connect <connect.yaml> && make run <project>
+
+# refresh connections to project data (deletes and creates the site without changing anything else)
+
+make connect connect.yaml
+
+# start a local server for a project
+
+make run <project>

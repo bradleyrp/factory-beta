@@ -20,3 +20,11 @@ The design of the factory codes is such that it can be used for simulations, cal
 4. "NO POST": The user has simulation data and codes. Omnicalc is cloned and pulls the codes. The user is now ready to post-process the data.
 5. "DEVELOPMENT": The user wants to change the omnicalc code somehow. The factory creates a new project that draws from the simulator/calculator codes in the "dev" folder. A variation of this allows the user to add parts (post,plot,repo,sims) from preexisting projects in order to develop the codes for those projects. There is no packed codes.
 
+## updates on 2016.2.24
+
+RPB set up omnicalc documentation.
+RPB cleaned up connect.py by removing development mode and allowing any project to use "development: true" to draw from the development codes. Also cleaned up status reports on "make conenct" and ensured that omnicalc is cloned properly, and documentation is compiled.
+RPB tested the "no repo" use case with the adhesion project on dark. Have not tried to test the refresh times functionality because this project uses TRRs and has no EDRS, but that would be a useful follow-up test.
+Refreshing thumbnails was stuck in a loop when there were no image files so RPB added a return statement.
+When importing previous data there is still a path problem when you click on the simulations. It's currently directing to the new simulations in the dropspot but it needs to look in the previous simulations.
+RPB says ignore refresh times results if there is no return from work.get_timeseq. There is no error reporting for this function but it's not a crucial one.

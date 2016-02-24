@@ -15,22 +15,13 @@ from copy import deepcopy
 import yaml
 
 #---user must supply the yaml file to describe the connections
-devmode = "DEVELOP" in sys.argv
-if len(sys.argv)!=2 and not (len(sys.argv)==3 and devmode): 
-	raise Exception('\n[USAGE] make connect <yaml>') 
-	quit()
+if len(sys.argv)!=2: raise Exception('\n[USAGE] make connect <yaml>') 
 with open(sys.argv[1]) as fp: sets = yaml.load(fp.read())
 if 'examples' in sets: del sets['examples']
 
-#---develop flag restricts attention only to the single develop entry
-if devmode:
-	devkeys = [i for i in sets if sets[i]['type']=='development']
-	if len(devkeys)>1: 
-		raise Exception('\n[ERROR] when using the develop option to connect.py you can only have one '+
-			'development type in the yaml file')
-	elif len(devkeys)==1:
-		sets = dict([(key,val) for key,val in sets.items() if key==devkeys[0]])
-	else: devmode = False
+#---disallow any project named dev
+if any([i=='dev' for i in sets]): 
+	raise Exception('[ERROR] cannot name a project "dev" in %s'%sys.argv[1])
 
 #---APPENDAGES
 #-------------------------------------------------------------------------------------------------------------
@@ -91,6 +82,10 @@ def mkdir_or_report(dn):
 #---master loop over all connections
 for connection_name,specs in sets.items():
 
+	if os.path.isdir('site/'+connection_name):
+		print "[STATUS] removing the site for \"%s\" to remake it"%connection_name
+		shutil.rmtree('site/'+connection_name)
+
 	#---regex PROJECT_NAME to the connection name in the paths sub-dictionary
 	for key,val in specs['paths'].items(): 
 		if type(val)==list: 
@@ -141,16 +136,10 @@ for connection_name,specs in sets.items():
 			"DATABASES['default']['NAME'] = os.path.join(os.path.abspath(BASE_DIR),'db.sqlite3')\n")
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
-	#---! need to make the data spots directory from a list or a string here
-	#---kickstart packages the codes in dev, makes a new project, and updates settings.py and urls.py
-	if not devmode:
-		subprocess.check_call('make -s kickstart %s %s %s'%(
-			connection_name,settings_append_fn,urls_append_fn),shell=True)
-	else: 
-		subprocess.check_call("git clone %s calc/dev &> logs/log-dev-clone-omni"%specs['omnicalc'],
-			shell=True,executable='/bin/bash')
-		subprocess.check_call("make -C calc/dev config defaults &> logs/log-dev-omni-config",
-			shell=True,executable='/bin/bash')
+	#---kickstart handles most of the project setup
+	cmd = 'make -s kickstart %s %s %s'%(connection_name,settings_append_fn,urls_append_fn)
+	print '[STATUS] running "%s"'%cmd
+	subprocess.check_call(cmd,shell=True)
 
 	#---remove blank calcs and local post/plot from default omnicalc configuration
 	for folder in ['post','plot','calcs']:
@@ -162,12 +151,14 @@ for connection_name,specs in sets.items():
 	if new_calcs_repo:
 		print "[STATUS] repo path %s does not exist so we are making a new one"%specs['repo']
 		mkdir_or_report(specs['calc']+'/calcs')
-		mkdir_or_report(specs['calc']+'/calcs/specs/')
-		mkdir_or_report(specs['calc']+'/calcs/specs/scripts/')
 		subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs')
-		#---AUTO POPULATE WITH CALCULATIONS
+		#---! AUTO POPULATE WITH CALCULATIONS HERE
 	#---if the repo is a viable git repo then we clone it
 	else: subprocess.check_call('git clone '+specs['repo']+' '+specs['calc']+'/calcs',shell=True)
+	#---create directories if they are missing
+	mkdir_or_report(specs['calc']+'/calcs/specs/')
+	mkdir_or_report(specs['calc']+'/calcs/scripts/')
+	subprocess.check_call('touch __init__.py',cwd=specs['calc']+'/calcs/scripts',shell=True,executable='/bin/bash')
 
 	#---given a previous omnicalc we consult paths.py in order to set up the new one
 	with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
@@ -196,42 +187,12 @@ for connection_name,specs in sets.items():
 			fp.write('%s = %s\n\n'%(key,
 			json.dumps(new_paths_file[key],indent=4,ensure_ascii=False).
 			replace('\\\\','\\').replace('    ','\t')))
-
 	#---previous omnicalc users may have a specific gromacs.py that they wish to use
 	if 'omni_gromacs_config' in specs and specs['omni_gromacs_config']:
 		gromacs_fn = os.path.abspath(os.path.expanduser(specs['omni_gromacs_config']))
 		shutil.copyfile(gromacs_fn,specs['calc']+'/gromacs.py')
-
-	#---extra commands for develpment
-	if devmode:
-
-		try: 
-			subprocess.check_call("git clone https://github.com/bradleyrp/automacs data/dev/sims/docs "+
-				"&> logs/log-dev-clone-sims",shell=True,executable='/bin/bash')
-		except: pass
-		try:
-			subprocess.check_call("make -C data/dev/sims/docs docs &> logs/log-dev-sims-docs",
-				shell=True,executable='/bin/bash')
-		except: pass
-		try:
-			subprocess.check_call(
-				'echo "from django.contrib.auth.models import User;User.objects.create_superuser'+
-				'(\'admin\',\'\',\'admin\');print;quit();" | python ./dev/manage.py shell &> /dev/null',
-				shell=True,executable='/bin/bash')
-		except: pass
-		subprocess.check_call('source env/bin/activate && python dev/manage.py makemigrations '+
-			'&> logs/log-dev-makemigrations',shell=True,executable='/bin/bash')
-		subprocess.check_call('source env/bin/activate && python dev/manage.py migrate '+
-			'&> logs/log-dev-migrate',shell=True,executable='/bin/bash')
-
 	#---assimilate old data if available
-	if 1:
-		if not devmode:
-			subprocess.check_call('source env/bin/activate && make -s -C '+specs['calc']+' export_to_factory %s %s'%
-				(connection_name,settings_paths['rootspot']+specs['site']),shell=True,executable='/bin/bash')
-		else:
-			subprocess.check_call('source env/bin/activate && make -C '+specs['calc']+' export_to_factory %s %s'%
-				(connection_name,settings_paths['rootspot']+'/dev/'),shell=True,executable='/bin/bash')
-
+	subprocess.check_call('source env/bin/activate && make -s -C '+specs['calc']+' export_to_factory %s %s'%
+		(connection_name,settings_paths['rootspot']+specs['site']),shell=True,executable='/bin/bash')
 	print "[STATUS] connected %s!"%connection_name
 	print "[STATUS] start with \"make run %s\""%connection_name

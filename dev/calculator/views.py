@@ -51,6 +51,7 @@ def refresh_thumbnails(request,remake=False):
 	root = settings.PLOTSPOT+'/'
 	if not os.path.isdir(root+'/thumbs'): os.mkdir(root+'/thumbs')
 	image_fns = collect_images()
+	if image_fns == []: return HttpResponseRedirect(reverse('calculator:index'))
 	for name,fn,meta in image_fns:
 		thumbfile = os.path.dirname(root+fn)+'/thumbs/'+os.path.basename(root+fn)
 		if not os.path.isfile(thumbfile) or remake:
@@ -198,6 +199,7 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 def refresh_times(request):
 
 	"""
+	Check on the duration of a simulation.
 	"""
 	
 	proc = subprocess.Popen('make refresh',cwd=settings.CALCSPOT,
@@ -206,7 +208,7 @@ def refresh_times(request):
 		sn = sim.code	
 		miniscript = ';'.join([
 			"python -c \"execfile('./omni/base/header.py')",
-			"print work.get_timeseq_range('%s')\"",
+			"print work.get_timeseq('%s')\"",
 			])
 		proc = subprocess.Popen(miniscript%sn,cwd=settings.CALCSPOT,
 			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -214,10 +216,10 @@ def refresh_times(request):
 		whittled = [i for i in ('\n'.join(catch)).split('\n') if 
 			not re.match('^\s*$',i) and 
 			not re.match('^\[',i)]
-		print whittled
-		startstop = eval(whittled[0])
-		sim.time_sequence = '-'.join(['%.f'%(i/1000.) for i in startstop])
-		sim.save()
+		if whittled != []: 
+			startstop = eval(whittled[0])
+			sim.time_sequence = '-'.join(['%.f'%(i/1000.) for i in startstop])
+			sim.save()
 	return HttpResponseRedirect(reverse('calculator:index'))
 
 def view_settings(request):

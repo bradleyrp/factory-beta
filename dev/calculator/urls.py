@@ -29,3 +29,4 @@ urlpatterns = [
 urlpatterns += static('/static/calculator/',document_root='static/calculator/')
 urlpatterns += static('/media/',document_root=settings.PLOTSPOT)
 urlpatterns += static('/codes/',document_root=settings.ROOTSPOT)
+urlpatterns += static('/omnidocs/',document_root=settings.CALCSPOT+'/omni/docs/build/_build/html/')
