@@ -104,6 +104,17 @@ def detail_source(request,id):
 	fns = '\n'.join(filenames)	
 	return render(request,'simulator/source.html',{'files':fns,'source':source})
 
+def find_simulation(code):
+
+	"""
+	Utility function to check the DROPSPOT (new simulations) or the DATASPOTS (previous simulations)
+	gleaned from the omnicalc paths.py file in order to find a current simulation code.
+	"""
+
+	path_candidates = [settings.DROPSPOT]+settings.DATASPOTS
+	location, = [pc+'/'+code for pc in path_candidates if os.path.isdir(pc+'/'+code)]
+	return location
+
 def detail_simulation(request,id):
 
 	"""
@@ -112,19 +123,23 @@ def detail_simulation(request,id):
 	"""
 
 	sim = get_object_or_404(Simulation,pk=id)
-	outgoing = {'sim':sim,'path':settings.DROPSPOT+sim.code}
+	location = find_simulation(sim.code)
+	outgoing = {'sim':sim,'path':location}
+	simscript = location+'/script-%s.py'%sim.program
+	if not os.path.isfile(simscript): 
+		return HttpResponse("[ERROR] could not locate %s, perhaps this simulation is old-school?"%simscript)
 	#---serve the simulation settings in a form if the simulation has not been started
 	if request.method=='GET':
-		settings_text = simulation_script(settings.DROPSPOT+sim.code+'/script-%s.py'%sim.program)
+		settings_text = simulation_script(simscript)
 		if not sim.started:
-			settings_text = simulation_script(settings.DROPSPOT+sim.code+'/script-%s.py'%sim.program)
+			settings_text = simulation_script(simscript)
 			outgoing['form'] = form_simulation_tune(initial={'settings':settings_text})
 		outgoing['settings_text'] = settings_text
 	#---interpret any changes to the settings and rewrite the simulation script before submitting
 	else:
 		form = form_simulation_tune(request.POST,request.FILES)
 		sim = get_object_or_404(Simulation,pk=id)
-		script_fn = settings.DROPSPOT+sim.code+'/script-%s.py'%sim.program
+		script_fn = simscript
 		settings_text = simulation_script(script_fn)
 		regex = '^(\s*[^:]+)\s*:\s+(.+)'		
 		settings_order = []
@@ -173,10 +188,10 @@ def detail_simulation(request,id):
 		this_job = BackgroundJob()
 		this_job.simulation = Simulation.objects.get(pk=sim.id)
 		this_job.save()
-		sherpa.delay(sim.program,this_job.id,cwd=settings.DROPSPOT+sim.code)
+		sherpa.delay(sim.program,this_job.id,cwd=location)
 		sim.started = True
 		sim.save()
-		settings_text = simulation_script(settings.DROPSPOT+sim.code+'/script-%s.py'%sim.program)
+		settings_text = simulation_script(simscript)
 		outgoing['settings_text'] = settings_text
 		return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
 	return render(request,'simulator/detail.html',outgoing)

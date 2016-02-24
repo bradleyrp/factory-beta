@@ -20,13 +20,14 @@ notes
 if [[ -d env ]]; then { echo "[STATUS] env already exists"; exit; }; fi
 # easy keyword lets you use system packages in the virtualenv
 if [[ "$1" = "system" ]]; then { echo "[STATUS] using system site-packages"; VENV_OPTS="--system-site-packages"; }
-else { echo "[STATUS] using an isolated virtual environment"; VENV_OPTS="--no-site-packages"; }
+else
+	echo "[STATUS] using an isolated virtual environment"
+	VENV_OPTS="--no-site-packages"
+	# requirements if not system
+	#! finish adding other tests (see comments for library names)
+	avail=$(echo '#include <cblas.h>' | cpp -H -o /dev/null 2>&1)
+	if ! [[ $? -eq 0 ]]; then { echo "[ERROR] no cblas"; exit 1; }; fi
 fi
-
-# requirements 
-#! finish adding other tests (see comments for library names)
-avail=$(echo '#include <cblas.h>' | cpp -H -o /dev/null 2>&1)
-if ! [[ $? -eq 0 ]]; then { echo "[ERROR] no cblas"; exit 1; }; fi
 
 echo "[STATUS] setting up virtualenv"
 bash deploy/check_dependencies.sh || { exit 1; }

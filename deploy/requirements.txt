@@ -11,6 +11,7 @@ matplotlib
 brewer2mpl
 Pillow # requires libjpeg8-devel
 celery
+flower
 Django
 django-celery
 django-rq
@@ -20,3 +21,4 @@ PyYAML
 docutils
 Sphinx 
 sphinx-better-theme
+beautifulsoup4

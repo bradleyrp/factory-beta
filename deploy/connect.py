@@ -67,6 +67,12 @@ CELERY_ROUTES = {
 #---PATHS
 """
 
+get_omni_dataspots = """if os.path.isfile(CALCSPOT+'/paths.py'):
+    omni_paths = {};execfile(CALCSPOT+'/paths.py',omni_paths)
+    DATASPOTS = omni_paths['paths']['data_spots']
+    del omni_paths
+"""
+
 def abspath(path): return os.path.join(os.path.expanduser(os.path.abspath(path)),'')
 
 def mkdir_or_report(dn):
@@ -134,6 +140,7 @@ for connection_name,specs in sets.items():
 			fp.write("DATABASES['default']['NAME'] = %s\n"%specs['paths']['database'])
 		else: fp.write(
 			"DATABASES['default']['NAME'] = os.path.join(os.path.abspath(BASE_DIR),'db.sqlite3')\n")
+		fp.write(get_omni_dataspots)
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
 	#---kickstart handles most of the project setup
@@ -163,7 +170,8 @@ for connection_name,specs in sets.items():
 	#---given a previous omnicalc we consult paths.py in order to set up the new one
 	with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
 	default_paths = {}
-	if 'parse_specs_config' not in specs: paths_fn = specs['calc']+'/paths.py'
+	if 'parse_specs_config' not in specs or not specs['parse_specs_config']:
+		paths_fn = specs['calc']+'/paths.py'
 	else: paths_fn = specs['parse_specs_config']
 	execfile(paths_fn,default_paths)
 	new_paths = deepcopy(default_paths['paths'])

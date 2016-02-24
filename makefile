@@ -10,11 +10,11 @@ $(eval $(RUN_ARGS):;@:)
 
 #---show the banner if no targets
 banner:
-	@sed -n 1,11p deploy/README.md
+	@sed -n 1,10p deploy/README.md
 
 #---useful hints
 help:
-	@tail -n +12 deploy/README.md
+	@tail -n +11 deploy/README.md
 
 #---do not target arguments if using python
 .PHONY: banner ${RUN_ARGS}
@@ -22,6 +22,7 @@ help:
 #---start a server and detach the screen
 run: shutdown
 	@bash deploy/run.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
+	@/bin/echo "[STATUS] see deploy/tunnelport to view the site over ssh"
 
 #---refresh connections via descriptions in a yaml file
 connect: 
@@ -55,4 +56,4 @@ env:
 nuke:
 	@bash deploy/nuke.sh || ( echo "[STATUS] fail";  exit 1 )
 	@/bin/echo "[STATUS] so lonely"
-	@/bin/echo "[STATUS] bootstrap to continue"
+	@/bin/echo "[STATUS] \"make env [system]\" to continue"

@@ -3,3 +3,11 @@ env
 aside
 pack/*
 !pack/.info
+logs/*
+!logs/.info
+site/*
+!site/.info
+calc/*
+!calc/.info
+data/*
+!data/.info

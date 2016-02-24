@@ -46,6 +46,7 @@ def refresh_thumbnails(request,remake=False):
 
 	"""
 	Create or update thumbnails so the views load faster in case of enormous image files.
+	This always makes the files that are missing.
 	"""	
 
 	root = settings.PLOTSPOT+'/'
@@ -59,10 +60,11 @@ def refresh_thumbnails(request,remake=False):
 	#---wait for thumbs to refresh on disk if we remade them
 	if remake: time.sleep(5)
 	#---! need to refresh the page manually after refreshing the thumbnails for some reason
-	return HttpResponseRedirect('?ignore=%d'%time.time())
+	#---! previously used ignore=time.time() to send a random number but not sure if this is necessary
+	return HttpResponseRedirect(reverse('calculator:index_ignore',kwargs={'ignore':0}))
 	
 def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
-	update_group=False,update_collection=False,update_calculation=False):
+	update_group=False,update_collection=False,update_calculation=False,ignore=0):
 
 	"""
 	Show a set of calculations.

@@ -1,4 +1,3 @@
-                          
     ___                                    
    / __)              _                    
  _| |__ _____  ____ _| |_ ___   ____ _   _ 
@@ -6,7 +5,6 @@
   | |  / ___ ( (___  | || |_| | |   | |_| |
   |_|  \_____|\____)  \__)___/|_|    \__  |
                                     (____/ 
-
              "one-to-many"
 
 [NOTE] use 'make help' for details
@@ -24,3 +22,4 @@ make connect connect.yaml
 # start a local server for a project
 
 make run <project>
+

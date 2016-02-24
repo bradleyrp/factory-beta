@@ -5,7 +5,7 @@ from . import views
 
 urlpatterns = [
 	url(r'^$',views.index,name='index'),
-	url(r'^ignore=[0-9]+$',views.index,name='index'),
+	url(r'^ignore=(?P<ignore>[0-9]+)$',views.index,name='index_ignore',kwargs={'ignore':0}),
 	url(r'^col(?P<collection_id>[0-9]+)grp(?P<group_id>[0-9]+)',views.index,name='bothIguess'),
 	url(r'^grp(?P<group_id>[0-9]+)$',views.index,name=''),
 	url(r'^grp(?P<group_id>[0-9]+)update$',views.index,name='index',kwargs={'update_group':True}),

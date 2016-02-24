@@ -1,0 +1,14 @@
+#!/bin/bash
+
+<<notes
+This bash script allows you to tunnel port 8000 from a remote machine 
+described in ~/.ssh/config to the current machine. 
+We use this to view local web servers over SSH.
+notes
+
+port=$2
+if [ -z $port ];then
+ssh -L 8000:127.0.0.1:8000 $1 -N
+else
+ssh -L $2:127.0.0.1:$2 $1 -N
+fi

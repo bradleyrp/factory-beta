@@ -28,3 +28,6 @@ RPB tested the "no repo" use case with the adhesion project on dark. Have not tr
 Refreshing thumbnails was stuck in a loop when there were no image files so RPB added a return statement.
 When importing previous data there is still a path problem when you click on the simulations. It's currently directing to the new simulations in the dropspot but it needs to look in the previous simulations.
 RPB says ignore refresh times results if there is no return from work.get_timeseq. There is no error reporting for this function but it's not a crucial one.
+RPB finalized the "reproduce" use case which includes an entire pipeline. This reduces the number of use cases down to three: new, reproduce, and post. The "post" use case lies somewhere in between the new/reproduce options. Most of the folder creation and cloning options handled in deploy/connect.py are flexible and won't overwrite anything.
+RPB also dropped random ignore arguments on thumbnail refresh to prevent the loop (however multiple refreshes may not work).
+RPB writes a function which gets data_spots paths from the omnicalc paths.py, stores it in settings.DATA_SPOTS, and then uses that to look up simulations in either the new location (dropspot) or the old ones (data_spots).
