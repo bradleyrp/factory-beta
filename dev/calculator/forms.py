@@ -18,12 +18,13 @@ class collection_form(forms.ModelForm):
 		"""
 		"""
 
+		print 1
 		kwargs.setdefault('label_suffix','')
+		print 2
 		super(collection_form,self).__init__(*args,**kwargs)
-		for field in self.fields.values():
-			field.error_messages = {'required':
-				'field "{fieldname}" is required'.format(fieldname=field.label)}
+		print 3
 		for field in self.fields: self.fields[field].label = field.lower()
+		print 4
 
 class group_form(forms.ModelForm):
 

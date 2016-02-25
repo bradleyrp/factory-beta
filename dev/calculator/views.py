@@ -39,7 +39,7 @@ def collect_images():
 		re.sub('_',' ',re.findall('^fig\.([^\.]+)\.',fn)[0]),fn,
 		eval(Image.open(settings.PLOTSPOT+'/'+fn).info['meta'])
 		) for fn in image_fns]
-	print "[STATUS] images: "+str(image_fns)
+	# print "[STATUS] images: "+str(image_fns)
 	return names_path_meta
 	
 def refresh_thumbnails(request,remake=False):
@@ -76,7 +76,7 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 			group = Group.objects.get(pk=group_id)
 			form_group = group_form(instance=group,prefix='group_form')	
 			form_group.fields['name'].widget.attrs['readonly'] = True
-		if collection_id == -1: form_collection = collection_form()
+		if collection_id == -1: form_collection = collection_form(prefix='collection_form')
 		else: 
 			collection = Collection.objects.get(pk=collection_id)
 			form_collection = collection_form(instance=collection,prefix='collection_form')	
@@ -170,12 +170,9 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 	#---collect codes
 	code_fns = []
 	for root,dns,fns in os.walk(settings.CALCSPOT+'/calcs/'): 
-		print root,dns,fns
 		for fn in fns:
-			print fn
 			if re.match('^.+[^_]\.py$',fn):
 				code_fns.append((fn,os.path.join(root,fn)))
-	print '[STATUS] code files: %s'%code_fns
 	outgoing = {
 		'image_fns':image_fns,
 		'simulations':Simulation.objects.all().order_by('id'),
@@ -193,7 +190,6 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 		'slice_form_doc':form_slice.__doc__,
 		'code_fns':code_fns,
 		}
-	print image_fns
 	modifier = ['','_original'][0]
 	rendered = render_to_string('calculator/index%s.html'%modifier,outgoing)
 	return render(request,'calculator/index%s.html'%modifier,outgoing)
