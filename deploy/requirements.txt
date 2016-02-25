@@ -1,5 +1,6 @@
 # minimial requirements for factory
 
+cython
 numpy
 scipy
 h5py
