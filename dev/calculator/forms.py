@@ -15,16 +15,12 @@ class collection_form(forms.ModelForm):
 
 	def __init__(self,*args,**kwargs):
 
-		"""
-		"""
-
-		print 1
 		kwargs.setdefault('label_suffix','')
-		print 2
 		super(collection_form,self).__init__(*args,**kwargs)
-		print 3
+		for field in self.fields.values():
+			field.error_messages = {'required':
+				'field "{fieldname}" is required'.format(fieldname=field.label)}
 		for field in self.fields: self.fields[field].label = field.lower()
-		print 4
 
 class group_form(forms.ModelForm):
 
@@ -37,9 +33,6 @@ class group_form(forms.ModelForm):
 			attrs={'cols':30,'rows':4,'placeholder':'conventional atom or molecule selection string'})}
 
 	def __init__(self,*args,**kwargs):
-
-		"""
-		"""
 
 		kwargs.setdefault('label_suffix','')
 		super(group_form,self).__init__(*args,**kwargs)
@@ -88,9 +81,6 @@ class calculation_form(forms.ModelForm):
 		initial_fields = ['name','slice_name','group','collections']
 
 	def __init__(self,*args,**kwargs):
-
-		"""
-		"""
 
 		kwargs.setdefault('label_suffix','')
 		super(calculation_form,self).__init__(*args,**kwargs)
