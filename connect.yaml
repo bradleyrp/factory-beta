@@ -1,112 +1,101 @@
 
-# copy an example for a typical use case below to the root level of this yaml file to use it
-examples: 
+### ACTIVE PROJECTS
 
-  # "NO REPO" use case
-  #   includes: previous simulation data, possibly some preexisting post folders, but nothing else
-  #   tested by rpb on dark on 2016.2.24
+### EXAMPLE USE CASES (copy to YAML root to use them)
+
+examples:
+
+  # "NEW" use case
+  #   concept:           starting from scratch
+  #   imports:           nothing
+  #   ambivalent about:  preexisting post/plot directories
+  #   creates:           new simulation dropspot, omnicalc, calcs repo, post/plot folders if necessary
+  #   last tested:       ???
+  project:
+    development: true
+    site: site/PROJECT_NAME  
+    calc: calc/PROJECT_NAME
+    repo: calc/PROJECT_NAME/calcs
+    database: site/PROJECT_NAME/db.factory.sqlite3
+    omnicalc: https://github.com/bradleyrp/omnicalc
+    automacs: https://github.com/bradleyrp/automacs
+    # locate a gromacs.py to use current machine gromacs configuration (can be null)
+    omni_gromacs_config: null
+     # locate a paths.py to extract parse_specs for parsing the previous data (can be null)
+    parse_specs_config: null
+    paths: # all paths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
+      # preexisting simulations
+      data_spots: []
+      # new simulations and simulator docs
+      dropspot: data/PROJECT_NAME/sims
+      # preexisting post-processed data, slices
+      post_data_spot: data/PROJECT_NAME/post
+      # preexisting plots
+      post_plot_spot: data/PROJECT_NAME/plot
+      # omnicalc makes a fresh workspace
+      workspace_spot: data/PROJECT_NAME/workspace 
+      # specs_file is autodetected from repo if null
+      specs_file: null
+
+  # "POST" use case
+  #   concept:           you have simulation data that you want to analyze
+  #   imports:           previous simulation data
+  #   ambivalent about:  preexisting post/plot directories
+  #   creates:           new simulation dropspot, omnicalc, calcs repo, post/plot folders if necessary
+  #   last tested:       by rpb on dark on 2016.2.24
   adhesion:
     development: true
     site: site/PROJECT_NAME  
     calc: calc/PROJECT_NAME
     repo: calc/PROJECT_NAME/calcs
     database: site/PROJECT_NAME/db.factory.sqlite3
-    omnicalc: http://www.github.com/bradleyrp/omnicalc
-    automacs: http://www.github.com/bradleyrp/automacs
-    omni_gromacs_config: /home/rpb/store-omicron/omnicalc-project-adhesion/gromacs.py # location of a user-specific omnicalc/gromacs.py configuration (can be null)
-    parse_specs_config: /home/rpb/store-omicron/omnicalc-project-adhesion/paths.py # location of a paths.py with parse_specs for parsing the previous data
-    paths: # all maths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
-      data_spots: ['/home/rpb/store-omicron/dataset-project-PROJECT_NAME/'] # preexisting simulations
-      dropspot: data/PROJECT_NAME/sims # new simulations and simulator docs
-      post_data_spot: /home/rpb/store-omicron/analyze-project-PROJECT_NAME/post # preexisting post-processed data, slices
-      post_plot_spot: /home/rpb/store-omicron/analyze-project-PROJECT_NAME/plot # preexisting plots
-      workspace_spot: /home/rpb/store-omicron/analyze-project-PROJECT_NAME/workspace # omnicalc makes a fresh workspace
-      specs_file: null # autodetected from repo
-
-  # "NEW" brand new project
-  project: 
-    type: new
-    drop: data/project
-    automacs: https://www.github.com/bradleyrp/automacs
     omnicalc: https://github.com/bradleyrp/omnicalc
-    repo: Null
+    automacs: https://github.com/bradleyrp/automacs
+    # locate a gromacs.py to use current machine gromacs configuration (can be null)
+    omni_gromacs_config: /home/rpb/store-omicron/omnicalc-project-adhesion/gromacs.py
+     # locate a paths.py to extract parse_specs for parsing the previous data (can be null)
+    parse_specs_config: /home/rpb/store-omicron/omnicalc-project-adhesion/paths.py
+    paths: # all paths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
+      # preexisting simulations
+      data_spots: ['/home/rpb/store-omicron/dataset-project-PROJECT_NAME/']
+      # new simulations and simulator docs
+      dropspot: data/PROJECT_NAME/sims
+      # preexisting post-processed data, slices
+      post_data_spot: /home/rpb/store-omicron/analyze-project-PROJECT_NAME/post
+      # preexisting plots
+      post_plot_spot: /home/rpb/store-omicron/analyze-project-PROJECT_NAME/plot
+      # omnicalc makes a fresh workspace
+      workspace_spot: /home/rpb/store-omicron/analyze-project-PROJECT_NAME/workspace 
+      # specs_file is autodetected from repo if null
+      specs_file: null
 
-  # "NO POST" the user has simulations and analysis codes ("repo") but no post data
-  existing_project_no_post:  
-    type: existing omnicalc
-    site: site/PROJECT_NAME # location of the django project
-    calc: calc/PROJECT_NAME # location of omnicalc
-    repo: /home/localshare/analysis/omnicalc-ptdins/calcs # git repository for previous omnicalc/calcs
-    omni_gromacs_config: null # location of a user-specific omnicalc/gromacs.py configuration
-    omnicalc: https://github.com/bradleyrp/omnicalc # latest omnicalc
-    automacs: http://www.github.com/bradleyrp/automacs # latest automacs
-    paths:
-      data_spots: ['/path/to/simulations']
-      post_data_spot: data/PROJECT_NAME/post # this overrides omnicalc default location
-      post_plot_spot: data/PROJECT_NAME/plot # this overrides omnicalc default location
-      workspace_spot: data/PROJECT_NAME/workspace 
-      specs_file: null # connect.py autodetects calc/PROJECT_NAME/calcs/specs/meta*.yaml
-
-  # "EXISTING" user has simulation, post, plots, and omnicalc code
+  # "REPRODUCE" use case
+  #   concept:           reconnect a complete project with simulation and post data
+  #   imports:           previous simulation data, postprocessing pickles, plots, calcs repo
+  #   creates:           new simulation dropspot, omnicalc, folders if missing
+  #   last tested:       by rpb on green on 2016.2.24
   ptdins:
-    type: existing omnicalc
-    site: site/PROJECT_NAME  
-    calc: calc/PROJECT_NAME
-    repo: /home/localshare/analysis/omnicalc-ptdins/calcs
-    omnicalc: https://github.com/bradleyrp/omnicalc
-    automacs: http://www.github.com/bradleyrp/automacs
-    paths:
-      data_spots: ['/home/localshare/membrane-v5xx']
-      post_data_spot: /home/localshare/post-PROJECT_NAME/post # preexisting post-processed data, slices
-      post_plot_spot: /home/localshare/post-PROJECT_NAME/plot # preexisting plots
-      workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
-      specs_file: null # autodetected from repo
-
-  # "UPDATED"
-  ptdins:
-    type: existing omnicalc
+    development: true
     site: site/PROJECT_NAME  
     calc: calc/PROJECT_NAME
     repo: /home/ryb/worker/analysis/omnicalc-ryb/calcs
     database: site/PROJECT_NAME/db.factory.sqlite3
     omnicalc: https://github.com/bradleyrp/omnicalc
-    automacs: http://www.github.com/bradleyrp/automacs
-    paths: # all maths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
-      data_spots: ['/home/localshare/membrane-v5xx'] # preexisting simulations
-      dropspot: data/PROJECT_NAME/sims # new simulations and simulator docs
-      post_data_spot: /home/ryb/worker/post-PROJECT_NAME/post # preexisting post-processed data, slices
-      post_plot_spot: /home/ryb/worker/post-PROJECT_NAME/plot # preexisting plots
-      workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
-      specs_file: null # autodetected from repo
-
-  # "NO REPO"
-  adhesion:
-    type: existing omnicalc
-    site: site/PROJECT_NAME  
-    calc: calc/PROJECT_NAME
-    repo: calc/PROJECT_NAME/
-    database: site/PROJECT_NAME/db.factory.sqlite3
-    omnicalc: https://github.com/bradleyrp/omnicalc
-    automacs: http://www.github.com/bradleyrp/automacs
-    paths: # all maths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
-      data_spots: [''] # preexisting simulations
-      dropspot: data/PROJECT_NAME/sims # new simulations and simulator docs
-      post_data_spot: /home/ryb/worker/post-PROJECT_NAME/post # preexisting post-processed data, slices
-      post_plot_spot: /home/ryb/worker/post-PROJECT_NAME/plot # preexisting plots
-      workspace_spot: data/PROJECT_NAME/workspace # omnicalc makes a fresh workspace
-      specs_file: null # autodetected from repo
-
-  # "DEVELOPMENT" is a protected name that holds live code according to this example
-  dev: 
-    type: development
-    calc: calc/PROJECT_NAME
-    omnicalc: https://github.com/bradleyrp/omnicalc
-    automacs: http://www.github.com/bradleyrp/automacs
-    paths:
-      data_spots: []
+    automacs: https://github.com/bradleyrp/automacs
+    # locate a gromacs.py to use current machine gromacs configuration (can be null)
+    omni_gromacs_config: /home/ryb/worker/analysis/omnicalc-ryb/gromacs.py 
+    # locate a paths.py to extract parse_specs for parsing the previous data (can be null)
+    parse_specs_config: /home/ryb/worker/analysis/omnicalc-ryb/paths.py 
+    paths: # all paths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
+      # preexisting simulations
+      data_spots: ['/home/localshare/membrane-v5xx']
+      # new simulations and simulator docs
       dropspot: data/PROJECT_NAME/sims
-      post_data_spot: data/PROJECT_NAME/post
-      post_plot_spot: data/PROJECT_NAME/plot
+      # preexisting post-processed data, slices
+      post_data_spot: /home/ryb/worker/post-PROJECT_NAME/post
+      # preexisting plots
+      post_plot_spot: /home/ryb/worker/post-PROJECT_NAME/plot
+      # omnicalc makes a fresh workspace
       workspace_spot: data/PROJECT_NAME/workspace
+      # specs_file is autodetected from repo if null
       specs_file: null
-      # repo is not implemented here
