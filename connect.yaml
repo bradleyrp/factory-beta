@@ -16,7 +16,7 @@ examples:
     site: site/PROJECT_NAME  
     calc: calc/PROJECT_NAME
     repo: calc/PROJECT_NAME/calcs
-    database: site/PROJECT_NAME/db.factory.sqlite3
+    database: data/PROJECT_NAME/db.factory.sqlite3
     omnicalc: https://github.com/bradleyrp/omnicalc
     automacs: https://github.com/bradleyrp/automacs
     # locate a gromacs.py to use current machine gromacs configuration (can be null)
@@ -48,7 +48,7 @@ examples:
     site: site/PROJECT_NAME  
     calc: calc/PROJECT_NAME
     repo: calc/PROJECT_NAME/calcs
-    database: site/PROJECT_NAME/db.factory.sqlite3
+    database: data/PROJECT_NAME/db.factory.sqlite3
     omnicalc: https://github.com/bradleyrp/omnicalc
     automacs: https://github.com/bradleyrp/automacs
     # locate a gromacs.py to use current machine gromacs configuration (can be null)
@@ -79,7 +79,7 @@ examples:
     site: site/PROJECT_NAME  
     calc: calc/PROJECT_NAME
     repo: /home/ryb/worker/analysis/omnicalc-ryb/calcs
-    database: site/PROJECT_NAME/db.factory.sqlite3
+    database: data/PROJECT_NAME/db.factory.sqlite3
     omnicalc: https://github.com/bradleyrp/omnicalc
     automacs: https://github.com/bradleyrp/automacs
     # locate a gromacs.py to use current machine gromacs configuration (can be null)
