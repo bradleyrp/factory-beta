@@ -31,3 +31,29 @@ RPB says ignore refresh times results if there is no return from work.get_timese
 RPB finalized the "reproduce" use case which includes an entire pipeline. This reduces the number of use cases down to three: new, reproduce, and post. The "post" use case lies somewhere in between the new/reproduce options. Most of the folder creation and cloning options handled in deploy/connect.py are flexible and won't overwrite anything.
 RPB also dropped random ignore arguments on thumbnail refresh to prevent the loop (however multiple refreshes may not work).
 RPB writes a function which gets data_spots paths from the omnicalc paths.py, stores it in settings.DATA_SPOTS, and then uses that to look up simulations in either the new location (dropspot) or the old ones (data_spots).
+
+## updates on 2016.2.25
+
+JJ and RPB determined that delays in the specs parser were due to excessive saving. This raises the question of how often we should save, and more generally, what the function of the workspace should be. Presently the workspace holds the interpreted meta files as well as the timeseries from many simulations, which mitigates the need to parse and check them very frequently (though this still happens). There is also the minor problem of some calculations requiring a "dry" parsing of the meta file, in the cases that no calculations need to be run but a plot is being made. It would be useful to outline a small number of routes by which the meta file gets in the workspace and the codes get this data. In the meantime it would be best to save less frequently.
+
+Need to make the following changes.
+
+1. Figure out the save behavior of the workspace.
+2. report error when there is no structures.pdb
+3. "command failed but nevermind" on solvate-steep in atomistic protein example but no actual error reporting.
+
+Changes to address these issues.
+
+1. The solvate minimizer was failing so RPB added an assertion error if the TPR file is missing. This raised the question of how to get this information to the user?
+2. The problem was originally due to a filename error in the include tip3p water command in the solvate section.
+3. ...
+4. RPB updates tasks.py to route error to a log file. The problem is that this log file is accessed via the workspace "watch_file" throughout the codes. The watch_file is simply appended and the entire python script doesn't just log output to it. The problem is that the factory needs to get the watch file and ask the *entire automacs script* to route errors there. To do this, it needs to infer the right log file *before the script runs*. For this reason I added a detect step to get the number. We will continue the convention of naming all step scripts by the program name and number. This means that the factory can just append to the log file. Note that I forgot to append in one of the tests and this put the error at the top of the log file but still magically routed stdout to the file *afterwards* which was really weird frankly.
+5. How to report errors in that log file to the user? The AJAX doesn't catch the last thing that happens because it only refreshes if a job is running. RPB started to solve this problem by figuring out how to asynchronously send a complete message from the server to client. Then realized it would be easier to just delay for more than one AJAX refresh before deleting the job. This worked and now the assertion errors show up in the console.
+
+Other issues.
+
+1. Need to clean up log-server, which seems to be getting the entirety of stdout from the worker. Perhaps we should route the stdout to dev/null in the tasks.py while stderr goes to the log.
+2. The job queue doesn't referesh like the console. It would be nice to have a more formal job/calculation queue that is more intuitive for handling broken jobs.
+
+Another useful idea about meta files: forget about catalogueing them. Just use every meta file in the specs folder and have the workspace report any conflicts.
+

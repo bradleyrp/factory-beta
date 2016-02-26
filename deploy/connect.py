@@ -28,6 +28,7 @@ if any([i=='dev' for i in sets]):
 
 urls_additions = """
 #---automatically added
+from django.conf.urls import include, url
 from django.views.generic.base import RedirectView
 urlpatterns += [
 	url(r'^simulator/',include('simulator.urls',namespace='simulator')),
