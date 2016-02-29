@@ -8,7 +8,7 @@ class Collection(models.Model):
 	"""
 	
 	name = models.CharField(max_length=100,default='',unique=True)
-	simulations = models.ManyToManyField('simulator.Simulation')
+	simulations = models.ManyToManyField('simulator.Simulation',blank=False)
 	def __str__(self): return self.name
 
 class Group(models.Model):

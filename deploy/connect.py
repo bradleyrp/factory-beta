@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!env/bin/python
 
 """
 Interpret a user input (typically connect.yaml) in order to set up the "factory".
@@ -83,6 +83,19 @@ def mkdir_or_report(dn):
 		os.mkdir(dn)
 		print "[STATUS] created %s"%dn
 
+absolute_environment_path = abspath('env')
+
+def bash(cmd,log=None,cwd='./',env=False):
+	if env: cmd = 'source %s/bin/activate && %s'%(absolute_environment_path,cmd)
+	if log:
+		output = open(log,'wb')
+		subprocess.check_call(cmd,cwd=cwd,shell=True,executable='/bin/bash',stdout=output,stderr=output)
+	else: subprocess.check_call(cmd,cwd=cwd,shell=True,executable='/bin/bash')
+
+#---handle the environment
+if not os.path.isdir('env'):
+	raise Exception('\n[ERROR] no environment. run "make env [system]" to create one')
+
 #---MAIN
 #-------------------------------------------------------------------------------------------------------------
 
@@ -136,18 +149,63 @@ for connection_name,specs in sets.items():
 			fp.write('%s = "%s"\n'%(key.upper(),val))
 		for key in ['PLOTSPOT','POSTSPOT','ROOTSPOT']: 
 			fp.write('%s = os.path.expanduser(os.path.abspath(%s))\n'%(key,key))
-		#---user-specified database
-		if 'database' in specs['paths']: 
-			fp.write("DATABASES['default']['NAME'] = %s\n"%specs['paths']['database'])
-		else: fp.write(
-			"DATABASES['default']['NAME'] = os.path.join(os.path.abspath(BASE_DIR),'db.sqlite3')\n")
+		#---must specify a database location
+		if 'database' in specs: 
+			fp.write("DATABASES['default']['NAME'] = \"%s\"\n"%os.path.abspath(specs['database']))
+		#else: fp.write(
+		#	"DATABASES['default']['NAME'] = os.path.join(os.path.abspath(BASE_DIR),'db.sqlite3')\n")
 		fp.write(get_omni_dataspots)
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
 	#---kickstart handles most of the project setup
-	cmd = 'make -s kickstart %s %s %s'%(connection_name,settings_append_fn,urls_append_fn)
-	print '[STATUS] running "%s"'%cmd
-	subprocess.check_call(cmd,shell=True)
+	if 0:
+		cmd = 'make -s kickstart %s %s %s %s %s'%(
+			connection_name,settings_append_fn,urls_append_fn,
+			specs['omnicalc'],specs['automacs'])
+		print '[STATUS] running "%s"'%cmd
+	if 0: subprocess.check_call(cmd,shell=True)
+	#---replacing bash script kickstart.sh here
+	#---to run from python we have to source every time
+	drop = 'source env/bin/activate && '
+	#---! no logging below
+	for app in ['simulator','calculator']:
+		if not os.path.isdir('pack/%s'%app): bash(drop+'make -s package %s'%app)
+	bash('django-admin startproject %s'%connection_name,
+		log='logs/log-%s-startproject'%connection_name,cwd='site/',env=True)
+	bash('cat %s >> site/%s/%s/settings.py'%(settings_append_fn,connection_name,connection_name))
+	bash('cat %s >> site/%s/%s/urls.py'%(urls_append_fn,connection_name,connection_name))
+	for dn in ['data/%s'%connection_name,'data/%s/sources'%connection_name]: 
+		if not os.path.isdir(dn): os.mkdir(dn)
+	bash('git clone %s calc/%s'%(specs['omnicalc'],connection_name),
+		log='logs/log-%s-git-omni'%connection_name)
+	if not os.path.isdir('data/%s/sims/docs'%connection_name):
+		bash('git clone %s data/%s/sims/docs'%(specs['automacs'],connection_name),
+			log='logs/log-%s-git-amx'%connection_name)
+	bash('make docs',cwd='data/%s/sims/docs'%connection_name,log='logs/log-$1-docs',env=True)
+	bash('make config defaults',cwd='calc/%s'%connection_name,
+		log='logs/log-%s-omnicalc-config'%connection_name,env=True)
+	for dn in ['calc/%s/calcs'%connection_name,'calc/%s/calcs/scripts'%connection_name]: 
+		if not os.path.isdir(dn): os.mkdir(dn)
+	bash('make docs',cwd='calc/%s'%connection_name,log='logs/log-%s-omnicalc-docs'%connection_name,env=True)
+	shutil.copy('deploy/celery_source.py','site/%s/%s/celery.py'%(connection_name,connection_name))
+	bash('sed -i "s/multiplexer/%s/g" site/%s/%s/celery.py'%
+		(connection_name,connection_name,connection_name))	
+	bash('python site/%s/manage.py migrate djcelery'%connection_name,
+		log='logs/log-%s-djcelery'%connection_name,env=True)
+	bash('python site/%s/manage.py migrate'%connection_name,
+		log='logs/log-%s-migrate',env=True)
+	print "[STATUS] making superuser"
+	su_script = "from django.contrib.auth.models import User; "+\
+		"User.objects.create_superuser('admin','','admin');print;quit();"
+	p = subprocess.Popen('source %s/bin/activate && python ./site/%s/manage.py shell'%(
+		absolute_environment_path,connection_name),		
+		stdin=subprocess.PIPE,
+		shell=True,executable='/bin/bash')
+	catch = p.communicate(input=su_script)[0]
+	#---report
+	print "[STATUS] new project \"%s\" is stored at ./data/%s"%(connection_name,connection_name)
+	print "[STATUS] replace with a symlink if you wish to store the data elsewhere"
+	#---done kickstart
 
 	#---remove blank calcs and local post/plot from default omnicalc configuration
 	for folder in ['post','plot','calcs']:
@@ -163,10 +221,34 @@ for connection_name,specs in sets.items():
 		#---! AUTO POPULATE WITH CALCULATIONS HERE
 	#---if the repo is a viable git repo then we clone it
 	else: subprocess.check_call('git clone '+specs['repo']+' '+specs['calc']+'/calcs',shell=True)
+	
 	#---create directories if they are missing
 	mkdir_or_report(specs['calc']+'/calcs/specs/')
 	mkdir_or_report(specs['calc']+'/calcs/scripts/')
-	subprocess.check_call('touch __init__.py',cwd=specs['calc']+'/calcs/scripts',shell=True,executable='/bin/bash')
+	subprocess.check_call('touch __init__.py',cwd=specs['calc']+'/calcs/scripts',
+		shell=True,executable='/bin/bash')
+	#---if startup then we load some common calculations (continued below)
+	if specs['startup']: 
+		for fn in glob.glob('deploy/preloads/*'): shutil.copy(fn,specs['calc']+'/calcs/')
+	#---add these calculations to the database
+	if 0: subprocess.check_call(
+		'source env/bin/activate && python ./deploy/register_calculation.py %s %s %s'%
+		(specs['site'],connection_name,specs['calc']),shell=True,executable='/bin/bash')
+	if 0:
+		def unpacker(fn,key):
+			d = {};execfile(fn,d);return d[key]
+		project_location = specs['site']
+		sys.path.insert(0,project_location)
+		os.environ.setdefault("DJANGO_SETTINGS_MODULE",connection_name+".settings")
+		if 'django' not in globals(): import django
+		else: django = reload(django)
+		django.setup()
+		if 'this_workspace' not in globals(): import base.workspace.Workspace as this_workspace
+		else: this_workspace = reload(this_workspace)
+		if workspace == None: workspace = unpacker(conf_paths,'paths')['workspace_spot']
+		work = this_workspace(workspace,previous=False)
+		import pdb;pdb.set_trace()
+		sys.path.remove(specs['calc'])
 
 	#---given a previous omnicalc we consult paths.py in order to set up the new one
 	with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
@@ -176,19 +258,20 @@ for connection_name,specs in sets.items():
 	else: paths_fn = specs['parse_specs_config']
 	execfile(paths_fn,default_paths)
 	new_paths = deepcopy(default_paths['paths'])
-	new_paths['data_spots'] = specs['paths']['data_spots']
+	new_paths['data_spots'] = [abspath(i) for i in specs['paths']['data_spots']]
 	new_paths['post_data_spot'] = settings_paths['postspot']
 	new_paths['post_plot_spot'] = settings_paths['plotspot']
 	new_paths['workspace_spot'] = abspath(root_data_dir+'/workspace')
 	#---specs files must be relative to the omnicalc root
-	if not specs['paths']['specs_file']:
-		#---automatically detect any yaml files in the specs folder
-		new_paths['specs_file'] = glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')
-	else:
-		custom_specs = specs['paths']['specs_file']
-		if type(custom_specs)==str: custom_specs = [custom_specs]
-		new_paths['specs_file'] = ['calcs/specs/'+os.path.basename(fn) 
-			for fn in glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')]
+	if 0:
+		if not specs['paths']['specs_file']:
+			#---automatically detect any yaml files in the specs folder
+			new_paths['specs_file'] = glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')
+		else:
+			custom_specs = specs['paths']['specs_file']
+			if type(custom_specs)==str: custom_specs = [custom_specs]
+			new_paths['specs_file'] = ['calcs/specs/'+os.path.basename(fn) 
+				for fn in glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')]
 	new_paths_file = {'paths':new_paths,'parse_specs':default_paths['parse_specs']}
 	with open(specs['calc']+'/paths.py','w') as fp:
 		fp.write('#!/usr/bin/python\n\n')

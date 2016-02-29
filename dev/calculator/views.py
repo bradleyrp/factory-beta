@@ -39,7 +39,6 @@ def collect_images():
 		re.sub('_',' ',re.findall('^fig\.([^\.]+)\.',fn)[0]),fn,
 		eval(Image.open(settings.PLOTSPOT+'/'+fn).info['meta'])
 		) for fn in image_fns]
-	# print "[STATUS] images: "+str(image_fns)
 	return names_path_meta
 	
 def refresh_thumbnails(request,remake=False):
@@ -94,14 +93,15 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 			form_group = group_form(prefix='group_form')
 			form_calculation = calculation_form(prefix='calculation_form')
 			if form_collection.is_valid():
-				new_collection = form_collection.save(commit=False)
-				new_collection.save()
+				#---crucial to note that you cannot do commit=False and save on the next line
+				#---...when you have 
+				new_collection = form_collection.save()
 				return HttpResponseRedirect(reverse('calculator:index'))
 		#---create a new group
 		elif request.path == '/calculator/new_group':
 			form_slice = slice_form(prefix='slice_form')
-			form_group = group_form(request.POST,request.FILES,prefix='group_form')
 			form_collection = collection_form(prefix='collection_form')
+			form_group = group_form(request.POST,request.FILES,prefix='group_form')
 			form_calculation = calculation_form(prefix='calculation_form')
 			if form_group.is_valid():
 				new_group = form_group.save(commit=False)
@@ -110,8 +110,8 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 		#---create a new slice
 		elif request.path == '/calculator/new_slice':
 			form_slice = slice_form(request.POST,request.FILES,prefix='slice_form')
-			form_group = group_form(prefix='group_form')
 			form_collection = collection_form(prefix='collection_form')
+			form_group = group_form(prefix='group_form')
 			form_calculation = calculation_form(prefix='calculation_form')
 			if form_slice.is_valid():
 				slice_name = form_slice.cleaned_data['name']
@@ -120,8 +120,6 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 					for collection_pk in form_slice.cleaned_data['collections']:
 						for sim in Collection.objects.get(pk=collection_pk).simulations.all():
 							#---make a new row in the slices table
-							print "making slice %s"%sim
-							print form_slice.cleaned_data['groups']
 							new_slice,created = Slice.objects.update_or_create(
 								name=slice_name,
 								simulation=sim,
@@ -134,16 +132,18 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 		#---create a new calculation
 		elif request.path == '/calculator/new_calculation':
 			form_slice = slice_form(prefix='slice_form')
-			form_group = group_form(prefix='group_form')
 			form_collection = collection_form(prefix='collection_form')
+			form_group = group_form(prefix='group_form')
 			form_calculation = calculation_form(request.POST,request.FILES,prefix='calculation_form')
 			if form_calculation.is_valid():
-				new_calculation = form_calculation.save(commit=False)
-				new_calculation.save()
+				new_calculation = form_calculation.save()
 				return HttpResponseRedirect(reverse('calculator:index'))
 		#---update a group
 		elif update_group:
 			group = Group.objects.get(pk=group_id)
+			form_slice = slice_form(prefix='slice_form')
+			form_collection = collection_form(prefix='collection_form')
+			form_calculation = calculation_form(prefix='calculation_form')
 			form_group = group_form(data=request.POST,instance=group,prefix='group_form')
 			if form_group.is_valid():
 				#---! note that we tried commit=False and later new_group.save() and it didn't update 
@@ -152,19 +152,25 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 		#---update a collection
 		elif update_collection:
 			collection = Collection.objects.get(pk=collection_id)
+			form_slice = slice_form(prefix='slice_form')
 			form_collection = collection_form(data=request.POST,instance=collection,prefix='collection_form')
+			form_group = group_form(prefix='group_form')
+			form_calculation = calculation_form(prefix='calculation_form')
 			if form_collection.is_valid():
 				new_collection = form_collection.save()
 				return HttpResponseRedirect(reverse('calculator:index'))
 		#---update a calculation
 		elif update_calculation:
 			calculation = Calculation.objects.get(pk=calculation_id)
-			form_calculation = calculation_form(data=request.POST,instance=calculation,prefix='calculation_form')
+			form_slice = slice_form(prefix='slice_form')
+			form_collection = collection_form(prefix='collection_form')
+			form_group = group_form(prefix='group_form')
+			form_calculation = calculation_form(data=request.POST,instance=calculation,
+				prefix='calculation_form')
 			if form_calculation.is_valid():
 				new_calculation = form_calculation.save()
 				return HttpResponseRedirect(reverse('calculator:index'))
-		else: 
-			raise Exception('unclear incoming path to the index.html page')
+		else: raise Exception('unclear incoming path to the index.html page')
 	refresh_thumbnails(request)
 	image_fns = collect_images()
 	#---collect codes
@@ -202,22 +208,25 @@ def refresh_times(request):
 	
 	proc = subprocess.Popen('make refresh',cwd=settings.CALCSPOT,
 		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	proc.communicate()
 	for sim in Simulation.objects.all():
 		sn = sim.code	
 		miniscript = ';'.join([
 			"python -c \"execfile('./omni/base/header.py')",
-			"print work.get_timeseq('%s')\"",
+			"print '>>>'+str(work.get_timeseq('%s'))\"",
 			])
 		proc = subprocess.Popen(miniscript%sn,cwd=settings.CALCSPOT,
 			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		catch = proc.communicate()
-		whittled = [i for i in ('\n'.join(catch)).split('\n') if 
-			not re.match('^\s*$',i) and 
-			not re.match('^\[',i)]
-		if whittled != []: 
-			startstop = eval(whittled[0])
+		try: 
+			regex = '^>>>(.+)$'
+			selected, = [re.findall(regex,i)[0] for i in ('\n'.join(catch)).split('\n') if re.match(regex,i)]
+			timeseq = eval(selected)
+			startstop = min([i[0][0] for i in timeseq]),max([i[0][1] for i in timeseq])
 			sim.time_sequence = '-'.join(['%.f'%(i/1000.) for i in startstop])
 			sim.save()
+		except Exception as e: 
+			print "[ERROR] exception: %s"%e
 	return HttpResponseRedirect(reverse('calculator:index'))
 
 def view_settings(request):
@@ -286,9 +295,9 @@ def compute(*args,**kwargs):
 	Write the yaml file and run make compute.
 	"""
 
+	print "[STATUS] starting OMNICALC compute "
 	#---prepare an a dictionary representing meta.yaml
 	outgoing = {'slices':{},'collections':{}}
-
 	for sl in Slice.objects.all():
 		if sl.simulation.code not in outgoing['slices']: outgoing['slices'][sl.simulation.code] ={}
 		if 'slices' not in outgoing['slices'][sl.simulation.code]: 
@@ -308,22 +317,18 @@ def compute(*args,**kwargs):
 	#---write collections
 	for collect in Collection.objects.all():
 		outgoing['collections'][collect.name] = [sim.code for sim in collect.simulations.all()]
-
-	#---! fix path below
-	print settings.CALCSPOT
-	with open(settings.CALCSPOT+'/calcs/specs/meta.slices.yaml','w') as fp:
+	with open(settings.CALCSPOT+'/calcs/specs/meta.factory.slices.yaml','w') as fp:
 		fp.write(yaml.safe_dump(outgoing))
-
 	#---write calculations to a separate yaml file
-	calcspecs = {'autocalcs':{},'autoplots':{}}
+	calcspecs = {'calculations':{},'plots':{}}
 	for calc in Calculation.objects.all():
-		calcspecs['autocalcs'][calc.name] = {
+		calcspecs['calculations'][calc.name] = {
 			'slice_name':calc.slice_name,
 			'group':calc.group.name,
 			'collections':[str(c.name) for c in calc.collections.all()],
 			'uptype':calc.uptype,
 			}
-		calcspecs['autoplots'][calc.name] = {
+		calcspecs['plots'][calc.name] = {
 			'slices':calc.slice_name,
 			'calculation':[calc.name],
 			'group':calc.group.name,
@@ -331,15 +336,12 @@ def compute(*args,**kwargs):
 			'uptype':calc.uptype,
 			}
 
-	#---! fix path below
-	print settings.CALCSPOT
-	with open(settings.CALCSPOT+'/calcs/specs/meta.calculations.yaml','w') as fp:
+	with open(settings.CALCSPOT+'/calcs/specs/meta.factory.calculations.yaml','w') as fp:
 		fp.write(yaml.safe_dump(calcspecs))			
-
 	#---! consider adding make compute dry
 	this_job = BackgroundCalc()
 	this_job.save()
-	sherpacalc.delay(this_job.id,autoreload=True,log='log',cwd='./')
+	sherpacalc.delay(this_job.id,autoreload=True,log='log',cwd=settings.CALCSPOT)
 
 	return HttpResponseRedirect(reverse('calculator:index'))
 

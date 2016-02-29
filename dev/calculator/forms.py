@@ -20,6 +20,9 @@ class collection_form(forms.ModelForm):
 		for field in self.fields.values():
 			field.error_messages = {'required':
 				'field "{fieldname}" is required'.format(fieldname=field.label)}
+		#---! unclear if this is necessary
+		# simulations = [[obj.id,obj.name] for obj in Simulation.objects.all()]
+		# self.fields['simulations'] = forms.MultipleChoiceField(required=True,choices=simulations)
 		for field in self.fields: self.fields[field].label = field.lower()
 
 class group_form(forms.ModelForm):

@@ -19,13 +19,15 @@ examples:
     database: data/PROJECT_NAME/db.factory.sqlite3
     omnicalc: https://github.com/bradleyrp/omnicalc
     automacs: https://github.com/bradleyrp/automacs
+    # copy preloaded scripts from deploy/stable
+    startup: true
     # locate a gromacs.py to use current machine gromacs configuration (can be null)
     omni_gromacs_config: null
      # locate a paths.py to extract parse_specs for parsing the previous data (can be null)
     parse_specs_config: null
     paths: # all paths must be absolute but can later be modified in site/PROJECT_NAME/settings.py
       # preexisting simulations
-      data_spots: []
+      data_spots: ['data/PROJECT_NAME/sims']
       # new simulations and simulator docs
       dropspot: data/PROJECT_NAME/sims
       # preexisting post-processed data, slices
@@ -34,8 +36,6 @@ examples:
       post_plot_spot: data/PROJECT_NAME/plot
       # omnicalc makes a fresh workspace
       workspace_spot: data/PROJECT_NAME/workspace 
-      # specs_file is autodetected from repo if null
-      specs_file: null
 
   # "POST" use case
   #   concept:           you have simulation data that you want to analyze
@@ -51,6 +51,8 @@ examples:
     database: data/PROJECT_NAME/db.factory.sqlite3
     omnicalc: https://github.com/bradleyrp/omnicalc
     automacs: https://github.com/bradleyrp/automacs
+    # copy preloaded scripts from deploy/stable
+    startup: true
     # locate a gromacs.py to use current machine gromacs configuration (can be null)
     omni_gromacs_config: /home/rpb/store-omicron/omnicalc-project-adhesion/gromacs.py
      # locate a paths.py to extract parse_specs for parsing the previous data (can be null)
@@ -66,8 +68,6 @@ examples:
       post_plot_spot: /home/rpb/store-omicron/analyze-project-PROJECT_NAME/plot
       # omnicalc makes a fresh workspace
       workspace_spot: /home/rpb/store-omicron/analyze-project-PROJECT_NAME/workspace 
-      # specs_file is autodetected from repo if null
-      specs_file: null
 
   # "REPRODUCE" use case
   #   concept:           reconnect a complete project with simulation and post data
@@ -82,6 +82,8 @@ examples:
     database: data/PROJECT_NAME/db.factory.sqlite3
     omnicalc: https://github.com/bradleyrp/omnicalc
     automacs: https://github.com/bradleyrp/automacs
+    # copy preloaded scripts from deploy/stable
+    startup: true
     # locate a gromacs.py to use current machine gromacs configuration (can be null)
     omni_gromacs_config: /home/ryb/worker/analysis/omnicalc-ryb/gromacs.py 
     # locate a paths.py to extract parse_specs for parsing the previous data (can be null)
@@ -97,5 +99,3 @@ examples:
       post_plot_spot: /home/ryb/worker/post-PROJECT_NAME/plot
       # omnicalc makes a fresh workspace
       workspace_spot: data/PROJECT_NAME/workspace
-      # specs_file is autodetected from repo if null
-      specs_file: null

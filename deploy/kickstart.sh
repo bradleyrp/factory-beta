@@ -11,6 +11,8 @@ notes
 projname=$1
 settings_appends=$2
 urls_appends=$3
+omni_repo=$4
+amx_repo=$5
 
 #---check for arguments
 if [ -z $projname ]; then { echo "[USAGE] make kickstart <project_name> <settings_additions> <urls_additions>"; exit; }; fi
@@ -41,9 +43,9 @@ if ! [[ -e data/$1  ]]; then mkdir data/$1; fi
 if ! [[ -e data/$1/sources  ]]; then mkdir data/$1/sources; fi 
 
 #---clone and configure external codes
-git clone https://github.com/bradleyrp/omnicalc calc/$1 &> logs/log-$1-git-omni
+git clone $omni_repo calc/$1 &> logs/log-$1-git-omni
 #---! docs assumes the dropspot path below
-git clone https://github.com/bradleyrp/automacs data/$1/sims/docs &> logs/log-$1-git-amx
+git clone $amx_repo data/$1/sims/docs &> logs/log-$1-git-amx
 make -C data/$1/sims/docs docs &> logs/log-$1-docs
 make -C calc/$1/ config defaults &> logs/log-$1-omnicalc-config
 if ! [[ -e calc/$1/calcs ]]; then mkdir calc/$1/calcs; fi 
@@ -51,7 +53,7 @@ if ! [[ -e calc/$1/calcs/scripts ]]; then mkdir calc/$1/calcs/scripts; touch cal
 make -C calc/$1/ docs &> logs/log-$1-omnicalc-docs
 
 #---assemble celery codes
-cp deploy/celery.py site/$1/$1/celery.py
+cp deploy/celery_source.py site/$1/$1/celery.py
 sed -i "s/multiplexer/$1/g" site/$1/$1/celery.py
 
 #---migrations

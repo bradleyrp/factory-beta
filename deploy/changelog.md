@@ -57,3 +57,21 @@ Other issues.
 
 Another useful idea about meta files: forget about catalogueing them. Just use every meta file in the specs folder and have the workspace report any conflicts.
 
+## updates on 2016.2.27
+
+RPB fixed the problem with the collections not registering simulatons with the database upon creation. The problem was that the delayed save via commit=False was breaking it, probably because it works across applications. Not sure why this flag was necessary anyway, but it was just copied from other similar lines.
+Moved on to work on the refresh_times. Ran one of the test simulations a bit longer and noticed that it took two clicks to get the new data. Tested it by moving files and found that it works fine when you hide files. After troubleshooting the timing and starting to doubt the synchronicity of the underlying code I realized that I had not closed an open subprocess so it wasn't waiting for the refresh to finish. Easy fix.
+RPB changed the default location for the database to the data folder. This way a reconnect won't delete it. Tested this on the current testing project and it successfully reloaded the database which means that we can now import old projects from the database.
+Started working on both omni and factory to implement the new code to handle specs files. There will be a detailed description in the comments.
+Also noticed that the kickstart function had the omnicalc repo hard-coded. One problem is that we cannot send a URL in the make command in the usual way. This needs fixed still.
+
+## updates on 2016.2.28
+
+Working on omnicalc so that it has more elegant data locations and specs files.
+Note that dataspots cannot be empty and we must return to the question we asked on Friday about how to handle the rootdir in the omnicalc workspace effectively so that we can have multiple incoming/outgoing data routes. For now we manually include the dropspot as the first data_spot in use cases that require it, namely one in which the new simulations are the ones that we wish to analyze. We will have to figure out the path cross-talk logic later on for more advanced use cases where we are analyzing both old and new data. I recommended a "cursor" functionality to Joe.
+Fixed connect.py so that it uses absolute data_spots paths.
+Testing on some proteins and found a major error in the slicer "gmx trjconv -b 1020 -e 1000 -dt 20" so that logic needs revisited. Removed a superfluous "+1" but that was probably there for a reason so check up on it.
+Added preloaded figures and tested them to create a protein_rmsd plot.
+Ported the entire kickstart.sh to connect.py because there were problems in the makefile when you send an HTTP for git to the kickstarter for cloning. Also removed kickstart from the makefile.
+
+

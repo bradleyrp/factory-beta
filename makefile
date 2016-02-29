@@ -25,8 +25,8 @@ run: shutdown
 	@/bin/echo "[STATUS] see deploy/tunnelport to view the site over ssh"
 
 #---refresh connections via descriptions in a yaml file
-connect: 
-	@python deploy/connect.py ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
+connect: shutdown
+	@./deploy/connect.py ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 
 #---reattach the screen running the server
 shutdown:
@@ -37,8 +37,8 @@ shell:
 	@bash deploy/shell.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 
 #---kickstart a new project (requires three arguments, managed by connect.py)
-kickstart: env
-	@bash deploy/kickstart.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
+#kickstart: env
+#	@bash deploy/kickstart.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 
 #---package a multiplexer app in a standalone folder and install
 package:
