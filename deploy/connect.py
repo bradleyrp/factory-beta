@@ -188,10 +188,8 @@ for connection_name,specs in sets.items():
 	shutil.copy('deploy/celery_source.py','site/%s/%s/celery.py'%(connection_name,connection_name))
 	bash('sed -i "s/multiplexer/%s/g" site/%s/%s/celery.py'%
 		(connection_name,connection_name,connection_name))	
-	bash('python site/%s/manage.py migrate djcelery'%connection_name,
-		log='logs/log-%s-djcelery'%connection_name,env=True)
 	bash('python site/%s/manage.py migrate'%connection_name,
-		log='logs/log-%s-migrate',env=True)
+		log='logs/log-%s-migrate'%connection_name,env=True)
 	print "[STATUS] making superuser"
 	su_script = "from django.contrib.auth.models import User; "+\
 		"User.objects.create_superuser('admin','','admin');print;quit();"
