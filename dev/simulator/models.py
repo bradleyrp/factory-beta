@@ -3,12 +3,23 @@ from django.core.files.storage import Storage
 from django.conf import settings
 import shutil,os,re
 
+class SourceQuerySet(models.QuerySet):
+	
+	"""
+	Must accompany the custom delete in the model for bulk deletion.
+	"""
+
+	def delete(self,*args,**kwargs):
+		for obj in self: obj.delete()
+		super(SourceQuerySet,self).delete(*args,**kwargs)
+
 class Source(models.Model):
 
 	"""
 	A generic input file for a simulation.
 	"""
 	
+	objects = SourceQuerySet.as_manager()
 	name = models.CharField(max_length=100,default='',unique=True)
 	elevate = models.BooleanField(default=False)
 	def __str__(self): return self.name
@@ -31,12 +42,24 @@ class Source(models.Model):
 		shutil.rmtree(settings.DROPSPOT+'/sources/'+self.folder())
 		print '[STATUS] done'
 		super(Source,self).delete()
+
+class SimulationQuerySet(models.QuerySet):
+	
+	"""
+	Must accompany the custom delete in the model for bulk deletion.
+	"""
+
+	def delete(self,*args,**kwargs):
+		for obj in self: obj.delete()
+		super(SimulationQuerySet,self).delete(*args,**kwargs)
 	
 class Simulation(models.Model):
 
 	"""
 	A simulation executed by automacs.
 	"""
+
+	objects = SimulationQuerySet.as_manager()
 
 	class Meta:
 		verbose_name = 'AUTOMACS simulation'
