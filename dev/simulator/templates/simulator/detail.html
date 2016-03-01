@@ -1,5 +1,6 @@
 {% extends "simulator/base.html" %}
 {% block content %}
+{% load code_syntax %}
 
 <div style="clear:both;"></div>
 <div class="tile-col">
@@ -27,12 +28,8 @@ location: {{ path }}
 </table>
 </form>
 {% else %}
-{% block code %}
 <strong>settings code</strong>
-<code>
-{{ settings_text|linebreaksbr }}
-</code>
-{% endblock %}
+{{ settings_text|highlight|safe }}
 {% endif %}
 
 </div>

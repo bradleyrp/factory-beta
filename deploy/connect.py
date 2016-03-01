@@ -174,8 +174,6 @@ for connection_name,specs in sets.items():
 		log='logs/log-%s-startproject'%connection_name,cwd='site/',env=True)
 	bash('cat %s >> site/%s/%s/settings.py'%(settings_append_fn,connection_name,connection_name))
 	bash('cat %s >> site/%s/%s/urls.py'%(urls_append_fn,connection_name,connection_name))
-	for dn in ['data/%s'%connection_name,'data/%s/sources'%connection_name]: 
-		if not os.path.isdir(dn): os.mkdir(dn)
 	bash('git clone %s calc/%s'%(specs['omnicalc'],connection_name),
 		log='logs/log-%s-git-omni'%connection_name)
 	if not os.path.isdir('data/%s/sims/docs'%connection_name):

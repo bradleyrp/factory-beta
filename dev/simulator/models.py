@@ -42,7 +42,7 @@ class Simulation(models.Model):
 		verbose_name = 'AUTOMACS simulation'
 
 	name = models.CharField(max_length=100,unique=True)
-	program_choices = ['protein','cgmd-bilayer']
+	program_choices = ['protein','cgmd-bilayer','homology']
 	program = models.CharField(max_length=30,choices=[(i,i) for i in program_choices],default='protein')
 	started = models.BooleanField(default=False)
 	code = models.CharField(max_length=200,unique=True)

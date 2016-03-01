@@ -111,7 +111,7 @@ def find_simulation(code):
 	gleaned from the omnicalc paths.py file in order to find a current simulation code.
 	"""
 
-	path_candidates = [settings.DROPSPOT]+settings.DATASPOTS
+	path_candidates = list(set([settings.DROPSPOT]+settings.DATASPOTS))
 	location, = [pc+'/'+code for pc in path_candidates if os.path.isdir(pc+'/'+code)]
 	return location
 
@@ -134,7 +134,7 @@ def detail_simulation(request,id):
 		if not sim.started:
 			settings_text = simulation_script(simscript)
 			outgoing['form'] = form_simulation_tune(initial={'settings':settings_text})
-		outgoing['settings_text'] = settings_text
+		outgoing['settings_text'] = re.sub('\n\n','\n',settings_text)
 	#---interpret any changes to the settings and rewrite the simulation script before submitting
 	else:
 		form = form_simulation_tune(request.POST,request.FILES)
@@ -165,6 +165,10 @@ def detail_simulation(request,id):
 						settings_dict['start structure']=='inputs/STRUCTURE.pdb'):
 						infile = os.path.basename(fns[0])
 						settings_dict['start structure'] = 'inputs/'+str(infile)			
+					elif (sim.program == 'homology' and 
+						settings_dict['template']=='inputs/STRUCTURE.pdb'):
+						infile = os.path.basename(fns[0])
+						settings_dict['template'] = 'inputs/'+str(infile)
 					single_pdb = True
 				#---if the source is "elevated" then we copy everything from its subfolder into inputs
 				if obj.elevate or single_pdb:
