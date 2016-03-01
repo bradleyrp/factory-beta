@@ -368,3 +368,17 @@ def view_code(request,path):
 	print "[STATUS] rendering code: %s"%path
 	with open(path) as fp: code = fp.read()
 	return render(request,'calculator/codeview.html',{'code':code,'path':path})
+
+def slices_summary(request):
+
+	"""
+	Print a summary list of all slices.
+	"""
+
+	summary_text = '\n'.join([
+		'slice name: %s simulation: %s times: %d-%d ps by %d ps'%(
+			('"'+i.name+'"').ljust(20,'.'),
+			('"'+i.simulation.name+'"').ljust(20,'.'),
+			i.start,i.end,i.skip)
+		for i in Slice.objects.all()])
+	return render(request,'calculator/slices_summary.html',{'summary_text':summary_text})

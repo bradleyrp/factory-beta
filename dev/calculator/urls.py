@@ -16,6 +16,7 @@ urlpatterns = [
 	url(r'^new_collection$',views.index,name='new_collection'),
 	url(r'^new_group$',views.index,name='new_group'),
 	url(r'^new_slice$',views.index,name='new_slice'),
+	url(r'^slices$',views.slices_summary,name='slices'),
 	url(r'^new_calculation$',views.index,name='new_calculation'),
 	url(r'^compute$',views.compute,name='compute'),
 	url(r'^rethumb$',views.refresh_thumbnails,name='refresh_thumbnails',kwargs={'remake':True}),
