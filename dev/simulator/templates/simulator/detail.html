@@ -2,11 +2,12 @@
 {% block content %}
 {% load code_syntax %}
 
+<div class="brick" style="text-align:center;">
+<div class="inbrick">
+{% include "simulator/tile_main.html" %}
+</div></div>
+
 <div style="clear:both;"></div>
-<div class="tile-col">
-
-{% include "simulator/navigate.html" %}
-
 <h2>simulation: {{ sim.name }}</h2>
 <code><p>
 program: {{ sim.program }}<br>
