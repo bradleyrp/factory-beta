@@ -52,6 +52,7 @@ from kombu import Exchange,Queue
 djcelery.setup_loader()
 BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACKS_LATE = False
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -174,8 +175,9 @@ for connection_name,specs in sets.items():
 		log='logs/log-%s-startproject'%connection_name,cwd='site/',env=True)
 	bash('cat %s >> site/%s/%s/settings.py'%(settings_append_fn,connection_name,connection_name))
 	bash('cat %s >> site/%s/%s/urls.py'%(urls_append_fn,connection_name,connection_name))
-	bash('git clone %s calc/%s'%(specs['omnicalc'],connection_name),
-		log='logs/log-%s-git-omni'%connection_name)
+	if not os.path.isdir('calc/%s'%connection_name):
+		bash('git clone %s calc/%s'%(specs['omnicalc'],connection_name),
+			 log='logs/log-%s-git-omni'%connection_name)
 	if not os.path.isdir('data/%s/sims/docs'%connection_name):
 		bash('git clone %s data/%s/sims/docs'%(specs['automacs'],connection_name),
 			log='logs/log-%s-git-amx'%connection_name)
@@ -188,8 +190,8 @@ for connection_name,specs in sets.items():
 	shutil.copy('deploy/celery_source.py','site/%s/%s/celery.py'%(connection_name,connection_name))
 	bash('sed -i "s/multiplexer/%s/g" site/%s/%s/celery.py'%
 		(connection_name,connection_name,connection_name))	
-	bash('python site/%s/manage.py migrate djcelery'%connection_name,
-		log='logs/log-%s-djcelery'%connection_name,env=True)
+#	bash('python site/%s/manage.py migrate djcelery'%connection_name,
+#		log='logs/log-%s-djcelery'%connection_name,env=True)
 	bash('python site/%s/manage.py migrate'%connection_name,
 		log='logs/log-%s-migrate',env=True)
 	print "[STATUS] making superuser"
