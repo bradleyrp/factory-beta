@@ -75,6 +75,73 @@ get_omni_dataspots = """if os.path.isfile(CALCSPOT+'/paths.py'):
     del omni_paths
 """
 
+#---permission settings for apache
+media_segment = """
+    Alias %s "%s"
+    <Directory %s>
+        Require all granted
+    </Directory> 
+"""
+
+#---! note previously used "Options Indexes FollowSymLinks" for write directories
+vhost_config = """
+#---to serve FACTORY:
+#---install apache2 and WSGI
+#---copy this file to /etc/apache2/vhosts.d/
+#---add "WSGIPythonPath /home/localshare/analysis/mplxr/env" to httpd.conf and substitue paths below
+#---restart apache
+<VirtualHost *:%d>
+    ServerName %s
+    ServerAlias factory
+    DocumentRoot %s
+%s
+    WSGIScriptAlias / %s
+    WSGIDaemonProcess factory python-path=%s:%s:%s
+    WSGIProcessGroup factory
+    <Directory %s>
+    	Order allow,deny
+    	Allow from all
+    	Require all granted
+    </Directory>
+</VirtualHost>
+"""
+
+def prepare_vhosts(rootdir,connection_name,port=None,dev=True):
+
+	"""
+	Prepare virtualhost configuration for users to serve over apache2.
+	"""
+
+	site_packages = 'env/lib/python2.7/site-packages'
+	#---we append the root directory to these media locations
+	aliases = {
+		'/static/calculator/':os.path.join(rootdir,'dev' if dev else site_packages,
+			'calculator/static/calculator',''),
+		'/static/simulator/':os.path.join(rootdir,'dev' if dev else site_packages,
+			'simulator/static/simulator',''),
+		}
+	#---generic server settings
+	serveset = {
+		'port':88,
+		'domain':'127.0.0.1',
+		'document_root':os.path.join(rootdir,'site',connection_name,''),
+		}
+	alias_conf = ''
+	for key,val in aliases.items(): 
+		alias_conf += media_segment%(key,val,val)
+	conf = vhost_config%(
+		serveset['port'] if not port else port,
+		serveset['domain'],
+		serveset['document_root'],
+		alias_conf,
+		os.path.join(rootdir,'site',connection_name,connection_name,'wsgi.py'),
+		os.path.join(rootdir,'site',connection_name,''),
+		#---add dev early
+		os.path.join(rootdir,'dev',''), 
+		os.path.join(rootdir,site_packages),
+		rootdir)
+	return conf
+
 def abspath(path): return os.path.join(os.path.expanduser(os.path.abspath(path)),'')
 
 def mkdir_or_report(dn):
@@ -125,6 +192,9 @@ for connection_name,specs in sets.items():
 	for key in ['post_plot_spot','post_data_spot','dropspot']: 
 		mkdir_or_report(abspath(specs['paths'][key]))
 	mkdir_or_report(abspath(specs['paths']['dropspot']+'/sources/'))
+
+	#---check if database exists and if so, don't make superuser
+	make_superuser = not os.path.isfile(specs['database'])
 
 	#---interpret paths from connect.yaml for PROJECT_NAME/PROJECT_NAME/settings.py in the django project
 	#---these paths are all relative to the rootspot, the top directory for the factory codes
@@ -192,14 +262,15 @@ for connection_name,specs in sets.items():
 		(connection_name,connection_name,connection_name))	
 	bash('python site/%s/manage.py migrate'%connection_name,
 		log='logs/log-%s-migrate'%connection_name,env=True)
-	print "[STATUS] making superuser"
-	su_script = "from django.contrib.auth.models import User; "+\
-		"User.objects.create_superuser('admin','','admin');print;quit();"
-	p = subprocess.Popen('source %s/bin/activate && python ./site/%s/manage.py shell'%(
-		absolute_environment_path,connection_name),		
-		stdin=subprocess.PIPE,
-		shell=True,executable='/bin/bash')
-	catch = p.communicate(input=su_script)[0]
+	if make_superuser:
+		print "[STATUS] making superuser"
+		su_script = "from django.contrib.auth.models import User; "+\
+			"User.objects.create_superuser('admin','','admin');print;quit();"
+		p = subprocess.Popen('source %s/bin/activate && python ./site/%s/manage.py shell'%(
+			absolute_environment_path,connection_name),		
+			stdin=subprocess.PIPE,
+			shell=True,executable='/bin/bash')
+		catch = p.communicate(input=su_script)[0]
 	#---report
 	print "[STATUS] new project \"%s\" is stored at ./data/%s"%(connection_name,connection_name)
 	print "[STATUS] replace with a symlink if you wish to store the data elsewhere"
@@ -284,5 +355,9 @@ for connection_name,specs in sets.items():
 	#---assimilate old data if available
 	subprocess.check_call('source env/bin/activate && make -s -C '+specs['calc']+' export_to_factory %s %s'%
 		(connection_name,settings_paths['rootspot']+specs['site']),shell=True,executable='/bin/bash')
+	print "[STATUS] got omnicalc errors? try git pull to stay current"
+	#---prepare a vhost file
+	conf = prepare_vhosts(os.getcwd(),connection_name,port=None if 'port' not in specs else specs['port'])
+	with open('logs/vhost_%s.conf'%connection_name,'w') as fp: fp.write(conf)
 	print "[STATUS] connected %s!"%connection_name
 	print "[STATUS] start with \"make run %s\""%connection_name

@@ -33,7 +33,7 @@ def collect_images():
 	"""
 
 	omni_paths = {}
-	execfile(settings.CALCSPOT+'/paths.py',omni_paths)
+	execfile(os.path.join(settings.ROOTSPOT,settings.CALCSPOT,'paths.py'),omni_paths)
 	image_fns = [os.path.basename(fn) for fn in glob.glob(settings.PLOTSPOT+'/*.png')]
 	names_path_meta = [(
 		re.sub('_',' ',re.findall('^fig\.([^\.]+)\.',fn)[0]),fn,

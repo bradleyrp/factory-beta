@@ -2,6 +2,7 @@ from django.conf.urls import url
 from django.conf.urls.static import static
 from django.conf import settings
 from . import views
+import os
 
 urlpatterns = [
 	url(r'^$',views.index,name='index'),
@@ -30,4 +31,5 @@ urlpatterns = [
 urlpatterns += static('/static/calculator/',document_root='static/calculator/')
 urlpatterns += static('/media/',document_root=settings.PLOTSPOT)
 urlpatterns += static('/codes/',document_root=settings.ROOTSPOT)
-urlpatterns += static('/omnidocs/',document_root=settings.CALCSPOT+'/omni/docs/build/_build/html/')
+urlpatterns += static('/omnidocs/',document_root=
+	'/home/rpb/omicron/factory/calc/project/omni/docs/build/_build/html/')
