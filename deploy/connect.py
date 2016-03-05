@@ -69,6 +69,13 @@ CELERY_ROUTES = {
 #---PATHS
 """
 
+lockdown_extra = """
+INSTALLED_APPS = tuple(list(INSTALLED_APPS)+['lockdown'])
+LOCKDOWN_PASSWORDS = ('%s')
+MIDDLEWARE_CLASSES = tuple(list(MIDDLEWARE_CLASSES)+['lockdown.middleware.LockdownMiddleware'])
+LOCKDOWN_FORM = 'lockdown.forms.LockdownForm'
+"""
+
 get_omni_dataspots = """if os.path.isfile(CALCSPOT+'/paths.py'):
     omni_paths = {};execfile(CALCSPOT+'/paths.py',omni_paths)
     DATASPOTS = omni_paths['paths']['data_spots']
@@ -223,8 +230,8 @@ for connection_name,specs in sets.items():
 		#---must specify a database location
 		if 'database' in specs: 
 			fp.write("DATABASES['default']['NAME'] = \"%s\"\n"%os.path.abspath(specs['database']))
-		#else: fp.write(
-		#	"DATABASES['default']['NAME'] = os.path.join(os.path.abspath(BASE_DIR),'db.sqlite3')\n")
+		if 'lockdown' in specs:
+			fp.write(lockdown_extra%specs['lockdown'])
 		fp.write(get_omni_dataspots)
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
