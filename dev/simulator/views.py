@@ -192,8 +192,8 @@ def detail_simulation(request,id):
 		this_job = BackgroundJob()
 		this_job.simulation = Simulation.objects.get(pk=sim.id)
 		this_job.save()
-		#sherpa.delay(sim.program,this_job.id,cwd=location)
-		sherpa.apply_async((sim.program, this_job.id, ), retry=False, cwd=location)
+		#---previously: sherpa.delay(sim.program,this_job.id,cwd=location)
+		sherpa.apply_async(args=(sim.program,this_job.id,),kwargs={'cwd':location},retry=False)
 		sim.started = True
 		sim.save()
 		settings_text = simulation_script(simscript)

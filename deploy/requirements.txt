@@ -16,6 +16,7 @@ flower
 Django
 django-celery
 django-rq
+django-lockdown
 redis
 
 PyYAML

@@ -13,24 +13,15 @@ def post_job_tasks(program,cwd):
 	Method-specific cleanup tasks.
 	"""
 
-	print "VERBOSE!"
-	print cwd
-	print os.getcwd()
 	if program=='homology':
-		print 111
 		best_pointer = cwd+'/best_structure_path'
 		if os.path.isfile(best_pointer):
-			print 222
 			with open(best_pointer) as fp: bsp = fp.read()
 			best = re.search('[\w0-9\.]+\.pdb',bsp).group()
-			print best
 			new_source = Source(name=best.rstrip('\.pdb'),elevate=False)
 			new_source.save()
-			print 333
 			os.mkdir(settings.DROPSPOT+'/sources/%s'%new_source.folder())
-			print 444
 			shutil.copy(cwd+'/'+best,settings.DROPSPOT+'sources/%s'%new_source.folder())
-			print 555
 	else: print "[WARNING] no post_job_tasks for method %s"%program
 
 def detect_last(cwd):
@@ -65,9 +56,7 @@ def sherpa(program,job_row_id,cwd='./'):
 	detect_last(cwd)
 	#---concatenate to the script here
 	errorlog = 'script-s%02d-%s.log'%(detect_last(cwd),program)
-	print "ERRORLOG = %s"%errorlog
-	print os.getcwd()
-	print cwd
+	print "[STATUS] sherpa is running a job with errors logged to %s"%errorlog
 	job = subprocess.Popen('./script-%s.py 2>> %s'%(program,errorlog),
 		shell=True,cwd=cwd)
 	this_job = BackgroundJob.objects.get(pk=job_row_id)

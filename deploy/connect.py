@@ -247,7 +247,7 @@ for connection_name,specs in sets.items():
 	drop = 'source env/bin/activate && '
 	#---! no logging below
 	for app in ['simulator','calculator']:
-		if not os.path.isdir('pack/%s'%app): bash(drop+'make -s package %s'%app)
+		if not os.path.isdir('pack/%s'%app): bash(drop+'make -s package %s'%app,log='logs/log-pack-%s'%app)
 	bash('django-admin startproject %s'%connection_name,
 		log='logs/log-%s-startproject'%connection_name,cwd='site/',env=True)
 	bash('cat %s >> site/%s/%s/settings.py'%(settings_append_fn,connection_name,connection_name))
@@ -275,7 +275,7 @@ for connection_name,specs in sets.items():
 			"User.objects.create_superuser('admin','','admin');print;quit();"
 		p = subprocess.Popen('source %s/bin/activate && python ./site/%s/manage.py shell'%(
 			absolute_environment_path,connection_name),		
-			stdin=subprocess.PIPE,
+			stdin=subprocess.PIPE,stderr=subprocess.PIPE,stdout=open(os.devnull,'w'),
 			shell=True,executable='/bin/bash')
 		catch = p.communicate(input=su_script)[0]
 	#---report
@@ -293,7 +293,7 @@ for connection_name,specs in sets.items():
 	if new_calcs_repo:
 		print "[STATUS] repo path %s does not exist so we are making a new one"%specs['repo']
 		mkdir_or_report(specs['calc']+'/calcs')
-		subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs')
+		subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs',stdout=open(os.devnull,'w'))
 		#---! AUTO POPULATE WITH CALCULATIONS HERE
 	#---if the repo is a viable git repo then we clone it
 	else: subprocess.check_call('git clone '+specs['repo']+' '+specs['calc']+'/calcs',shell=True)
