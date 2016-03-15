@@ -68,7 +68,7 @@ class Simulation(models.Model):
 	program_choices = ['protein','cgmd-bilayer','homology']
 	program = models.CharField(max_length=30,choices=[(i,i) for i in program_choices],default='protein')
 	started = models.BooleanField(default=False)
-	code = models.CharField(max_length=200,unique=True)
+	code = models.CharField(max_length=200,unique=True,blank=True)
 	sources = models.ManyToManyField(Source)
 	time_sequence = models.CharField(max_length=100,default='')
 	def __str__(self): return self.name

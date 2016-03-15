@@ -25,11 +25,16 @@ def index(request):
 		form_sources = build_sources_form()
 		if form.is_valid():
 			sim = form.save(commit=False)
-			#---clone automacs
-			sim.save()
+                        #---get the id before you make the rootdir
+                        sim.save()
 			#---prepare the simulation
 			print '[STATUS] cloning AUTOMACS'
 			rootdir = 'simulation-v%05d'%sim.id
+                        if os.path.isdir(rootdir): 
+                                HttpResponse('[ERROR] %s already exists so '+
+                                             'we cannot use this code to make a new simulation. '+
+                                             'you probably need to move or delete that folder. '+
+                                             'try moving to another dropspot'%rootdir)
 			sim.code = rootdir
 			subprocess.check_call('git clone %s %s'%(settings.AUTOMACS_UPSTREAM,rootdir),
 				shell=True,cwd=settings.DROPSPOT)
@@ -112,7 +117,9 @@ def find_simulation(code):
 	"""
 
 	path_candidates = list(set([settings.DROPSPOT]+settings.DATASPOTS))
-	location, = [pc+'/'+code for pc in path_candidates if os.path.isdir(pc+'/'+code)]
+        locations = [pc+'/'+code for pc in path_candidates if os.path.isdir(pc+'/'+code)]
+        assert len(locations)==1
+        location, = locations
 	return location
 
 def detail_simulation(request,id):
