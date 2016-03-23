@@ -84,17 +84,3 @@ class Simulation(models.Model):
 		shutil.rmtree(settings.DROPSPOT+'/'+self.code)
 		print '[STATUS] done'
 		super(Simulation,self).delete()
-
-class BackgroundJob(models.Model):
-
-	"""
-	A job running in the background.
-	"""
-
-	class Meta:
-		verbose_name = 'Background Job'
-	def __str__(self): return 'PID '+str(self.pid)
-	pid = models.IntegerField(default=-1)
-	simulation = models.ForeignKey(Simulation,on_delete=models.CASCADE)
-
-	

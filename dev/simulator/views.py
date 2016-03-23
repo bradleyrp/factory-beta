@@ -7,7 +7,7 @@ from django.contrib.staticfiles.views import serve
 from django.http import JsonResponse
 from .forms import *
 from .models import *
-from .tasks import sherpa
+from .tasks import sherpa,sherpa_DUMMY
 import os,subprocess
 import re,glob,shutil,time
 
@@ -47,10 +47,10 @@ def index(request):
 	allsims = Simulation.objects.all().order_by('id')
 	allsources = Source.objects.all().order_by('id')
 	modifier = ['','_basic'][0]
-	return render(request,'simulator/index%s.html'%modifier,
-		{'form_simulation':form,'allsims':allsims,
+	return render(request,'simulator/index%s.html'%modifier,{
+		'form_simulation':form,'allsims':allsims,
 		'form_sources':form_sources,'allsources':allsources,
-		'alljobs':BackgroundJob.objects.all().order_by('id')})
+		})
 		
 def upload_sources(request):
 
@@ -196,11 +196,8 @@ def detail_simulation(request,id):
 			settings_dict['files'] = str(additional_files)
 			settings_order.append('files')
 		simulation_script(script_fn,changes=[(key,settings_dict[key]) for key in settings_order])
-		this_job = BackgroundJob()
-		this_job.simulation = Simulation.objects.get(pk=sim.id)
-		this_job.save()
 		#---previously: sherpa.delay(sim.program,this_job.id,cwd=location)
-		sherpa.apply_async(args=(sim.program,this_job.id,),kwargs={'cwd':location},retry=False)
+		sherpa.apply_async(args=(sim.program,),kwargs={'cwd':location},retry=False)
 		sim.started = True
 		sim.save()
 		settings_text = simulation_script(simscript)
@@ -208,33 +205,17 @@ def detail_simulation(request,id):
 		return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
 	return render(request,'simulator/detail.html',outgoing)
 	
-def background_job_kill(request,id):
-
-	"""
-	Kill a background job.
-	Note that this must be run from the mplxr root directory!
-	"""
-	
-	this_job = BackgroundJob.objects.get(pk=id)
-	print "[STATUS] killing background job with PID: %d"%this_job.pid
-	os.system('bash '+settings.ROOTSPOT+'/deploy/terminate_children.sh %d'%this_job.pid)
-	this_job.delete()	
-	return HttpResponseRedirect(reverse('simulator:index'))
-	
 def calculation_monitor(request):
 
 	"""
 	Report on a running calculation if one exists.
 	"""
 
-	#---only read if jobs are running otherwise ajax will remember the last text
-	print BackgroundJob.objects.all()
-	if any(BackgroundJob.objects.all()):
-		jobs = BackgroundJob.objects.all().order_by('-id')
-		dn = next(j for j in jobs if j.pid!=-1).simulation.code
+	try:	
+		dn = max(glob.iglob(settings.DROPSPOT+'/simulation-v*/script-*.py'),key=os.path.getctime)
 		logs = glob.glob(settings.DROPSPOT+dn+'/*.log')
 		last_log = sorted([os.path.basename(g) for g in glob.glob(settings.DROPSPOT+dn+'/*.log')],
 			key=lambda x:int(re.findall('^script-s([0-9]+)-.+\.log$',x)[0]))[-1]
 		with open(settings.DROPSPOT+dn+'/'+last_log) as fp: lines = fp.readlines()
 		return JsonResponse({'line':lines,'running':True})
-	else: return JsonResponse({'line':'','running':True})
+	except: return JsonResponse({'line':'NOTHING HERE YET','running':True})

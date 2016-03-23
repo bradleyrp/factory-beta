@@ -5,8 +5,9 @@ import os,subprocess
 from django.conf import settings
 from .models import Simulation,BackgroundJob,Source
 from celery.utils.log import get_task_logger
-import time,re,json,glob,shutil
-import os
+import time,re,json,glob,shutil,os
+
+logger = get_task_logger(__name__)
 
 def post_job_tasks(program,cwd):
 
@@ -42,39 +43,20 @@ def detect_last(cwd):
 	except: last_step = 0
 	return last_step + 1
 
-logger = get_task_logger(__name__)
-
-@shared_task(track_started=True,default_retry_delay=12*60*60)
-def sherpa(program,job_row_id,cwd='./'):
+@shared_task(track_started=True,max_retries=1,bind=True)
+def sherpa(self,program,cwd='./'):
 
 	"""
 	Use subprocess and celery to execute a job in the background.
-	#python manage.py celeryd --loglevel=INFO
-	#python manage.py celery -A multiplexer flower
 	"""
 
-	# YOU ABSOLUTELY CANNOT CHANGE THIS FILE WITHOUT RESTARTING THE WORKER !!!
+	### YOU ABSOLUTELY CANNOT CHANGE THIS FILE WITHOUT RESTARTING THE WORKER !!!
 
 	#---infer the watch file
 	detect_last(cwd)
 	#---concatenate to the script here
 	errorlog = 'script-s%02d-%s.log'%(detect_last(cwd),program)
 	print "[STATUS] sherpa is running a job with errors logged to %s"%errorlog
-	this_job = BackgroundJob.objects.get(pk=job_row_id)
-        if this_job.pid!=-1:
-                logger.info("background job row {0} has pid {1}".format(job_row_id,this_job.pid))
-                logger.info("leaving kansas")
-                return False
-	job = subprocess.Popen('./script-%s.py 2>> %s'%(program,errorlog),
-		shell=True,cwd=cwd)
-
-        logger.info("submitted job {0} pre-save, row {1}".format(job.pid,job_row_id))
-	this_job.pid = job.pid
-	this_job.save()
-        logger.info("submitted job {0} pre-communicate, row {1}".format(job.pid,job_row_id))
+	job = subprocess.Popen('./script-%s.py 2>> %s'%(program,errorlog),shell=True,cwd=cwd)
 	job.communicate()
 	post_job_tasks(program,cwd=cwd+'/s%02d-%s'%(detect_last(cwd),program))
-	#---wait to delete the job so that AJAX refreshes the log
-	time.sleep(8)
-	this_job.delete()
-	return True
