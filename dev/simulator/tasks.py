@@ -3,7 +3,7 @@ from celery import shared_task
 from .models import Simulation
 import os,subprocess
 from django.conf import settings
-from .models import Simulation,BackgroundJob,Source
+from .models import Simulation,Source
 from celery.utils.log import get_task_logger
 import time,re,json,glob,shutil,os
 

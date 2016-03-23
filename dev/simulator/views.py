@@ -7,7 +7,7 @@ from django.contrib.staticfiles.views import serve
 from django.http import JsonResponse
 from .forms import *
 from .models import *
-from .tasks import sherpa,sherpa_DUMMY
+from .tasks import sherpa
 import os,subprocess
 import re,glob,shutil,time
 

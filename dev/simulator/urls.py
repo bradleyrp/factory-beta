@@ -10,7 +10,6 @@ urlpatterns = [
 	url(r'^builder$',views.index,name='build_simulation'),
 	url(r'^upload_sources$',views.upload_sources,name='upload_sources'),
 	url(r'^sim(?P<id>[0-9]+)',views.detail_simulation,name='detail_simulation'),
-	url(r'^background_job_kill(?P<id>[0-9]+)',views.background_job_kill,name='background_job_kill'),
 	url(r'^source(?P<id>[0-9]+)',views.detail_source,name='detail_source'),
 	url(r'^logger',views.calculation_monitor,name='calculation_monitor'),
 	]
