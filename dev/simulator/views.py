@@ -11,6 +11,14 @@ from .tasks import sherpa
 import os,subprocess
 import re,glob,shutil,time
 
+#from .celery import app
+
+#---get the app for monitoring the queue
+#---! make ports variable please
+#import celery
+#app = celery.Celery('project',broker='redis://localhost:6379',backend='redis://localhost:6379')
+#inspector = app.control.inspect()
+
 def index(request):
 
 	"""
@@ -205,17 +213,31 @@ def detail_simulation(request,id):
 		return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
 	return render(request,'simulator/detail.html',outgoing)
 	
-def calculation_monitor(request):
+def calculation_monitor(request,debug=False):
 
 	"""
 	Report on a running calculation if one exists.
 	"""
 
 	try:	
-		dn = max(glob.iglob(settings.DROPSPOT+'/simulation-v*/script-*.py'),key=os.path.getctime)
-		logs = glob.glob(settings.DROPSPOT+dn+'/*.log')
-		last_log = sorted([os.path.basename(g) for g in glob.glob(settings.DROPSPOT+dn+'/*.log')],
+		dn = os.path.dirname(max(
+			glob.iglob(settings.DROPSPOT+'/simulation-v*/script-*.py'),key=os.path.getctime))
+		logs = glob.glob(os.path.join(dn,'*.log'))
+		last_log = sorted([os.path.basename(g) for g in glob.glob(dn+'/*.log')],
 			key=lambda x:int(re.findall('^script-s([0-9]+)-.+\.log$',x)[0]))[-1]
-		with open(settings.DROPSPOT+dn+'/'+last_log) as fp: lines = fp.readlines()
+		with open(dn+'/'+last_log) as fp: lines = fp.readlines()
 		return JsonResponse({'line':lines,'running':True})
 	except: return JsonResponse({'line':'NOTHING HERE YET','running':True})
+
+def queue_monitor(request):
+
+	"""
+	Report on a running calculation if one exists.
+	"""
+
+	lines = ''
+	active = inspector.active()
+	for task in active['celery@queue_sim']:
+		lines += 'JOB: %s, worker pid: %d, task id: %s\n\n'%(
+			os.path.basename(eval(task['kwargs'])['cwd']),task['worker_pid'],task['id'])
+	return JsonResponse({'line':lines,'running':True})

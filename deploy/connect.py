@@ -368,3 +368,50 @@ for connection_name,specs in sets.items():
 	with open('logs/vhost_%s.conf'%connection_name,'w') as fp: fp.write(conf)
 	print "[STATUS] connected %s!"%connection_name
 	print "[STATUS] start with \"make run %s\""%connection_name
+
+"""
+# FACTORY-generated paths.yaml
+post_data_spot: post
+post_plot_spot: plot
+workspace_spot: workspace
+how_to_handle_names: name is just the spot name
+spots:
+  # the spot name below distinguishes multiple imported spots (batches of data)
+  some_generic_name_for_new_simulations_from_factory:
+    # 
+    namer: "lambda spot,top = '%s-%s'%(spot,top)"
+    # location of the spot_directory (you can change this and reconnect if you move the data)
+    route_to_data: /home/rpb/omicron
+    # permanent parent folder for this spot (stored in the database)
+    spot_directory: dataset-project-ptdins
+    # rules for parsing the data in the spot directories
+    regexes:
+      # each simulation folder in the spot directory must match the top regex
+      top: "(membrane-v[0-9]+)"
+      # each simulation folder must have trajectories in subfolders that match the step regex (can be null)
+      step: "([stuv])([0-9]+)-([^\/]+)"
+      # each part regex is parsed by omnicalc
+      part: 
+        - "md.part([0-9]{4})\.xtc"
+        - "md.part([0-9]{4})\.trr"
+        - "(system|system-input|structure)\.(gro|pdb)"
+  # the spot name below distinguishes multiple imported spots (batches of data)
+  ptdins:
+    #
+    namer: "lambda spot,top = '%s-%s'%(spot,top)"
+    # location of the spot_directory (you can change this and reconnect if you move the data)
+    route_to_data: /home/rpb/omicron
+    # permanent parent folder for this spot (stored in the database)
+    spot_directory: dataset-project-ptdins
+    # rules for parsing the data in the spot directories
+    regexes:
+      # each simulation folder in the spot directory must match the top regex
+      top: "(membrane-v[0-9]+)"
+      # each simulation folder must have trajectories in subfolders that match the step regex (can be null)
+      step: "([stuv])([0-9]+)-([^\/]+)"
+      # each part regex is parsed by omnicalc
+      part: 
+        - "md.part([0-9]{4})\.xtc"
+        - "md.part([0-9]{4})\.trr"
+        - "(system|system-input|structure)\.(gro|pdb)"
+"""

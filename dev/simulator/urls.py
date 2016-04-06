@@ -11,7 +11,8 @@ urlpatterns = [
 	url(r'^upload_sources$',views.upload_sources,name='upload_sources'),
 	url(r'^sim(?P<id>[0-9]+)',views.detail_simulation,name='detail_simulation'),
 	url(r'^source(?P<id>[0-9]+)',views.detail_source,name='detail_source'),
-	url(r'^logger',views.calculation_monitor,name='calculation_monitor'),
+	url(r'^logger$',views.calculation_monitor,name='calculation_monitor'),
+	url(r'^queue$',views.queue_monitor,name='queue_monitor'),
 	]
 
 urlpatterns += static('/static/simulator/',document_root='static/simulator/')
