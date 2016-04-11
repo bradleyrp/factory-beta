@@ -16,17 +16,17 @@ def sherpacalc(job_row_id,autoreload=False,log='log',cwd='./'):
 	print "[STATUS] running sherpacalc at with cwd=%s at %s"%(cwd,os.getcwd())
 	job = subprocess.Popen('make compute log=%s autoreload'%log,cwd=cwd,
 		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	#---! should we gut the background jobs? and rework the queue viewer?
 	this_job = BackgroundCalc.objects.get(pk=job_row_id)
 	this_job.pid = job.pid
 	this_job.save()
 	job.communicate()
-	if 0:
-		job = subprocess.Popen('make plot log=%s'%log,cwd=cwd,
-			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-		this_job.pid = job.pid
-		this_job.save()
-		job.communicate()
+	#---! should we always plot?
+	job = subprocess.Popen('make plot log=%s'%log,cwd=cwd,
+		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	this_job.pid = job.pid
+	this_job.save()
+	job.communicate()
 	#---wait before deleting to make sure logs get pushed out
-	time.sleep(3)
 	this_job.delete()
 	return
