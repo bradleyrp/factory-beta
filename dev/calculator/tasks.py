@@ -20,11 +20,12 @@ def sherpacalc(job_row_id,autoreload=False,log='log',cwd='./'):
 	this_job.pid = job.pid
 	this_job.save()
 	job.communicate()
-	job = subprocess.Popen('make plot log=%s'%log,cwd=cwd,
-		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	this_job.pid = job.pid
-	this_job.save()
-	job.communicate()
+	if 0:
+		job = subprocess.Popen('make plot log=%s'%log,cwd=cwd,
+			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		this_job.pid = job.pid
+		this_job.save()
+		job.communicate()
 	#---wait before deleting to make sure logs get pushed out
 	time.sleep(3)
 	this_job.delete()

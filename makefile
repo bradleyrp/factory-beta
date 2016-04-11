@@ -3,17 +3,23 @@
 
 #---filter and evaluate
 -include banner
+VALID_TARGETS := banner run shutdown shell kickstart package bootstrap reset connect nuke help env
 RUN_ARGS_UNFILTER := $(wordlist 1,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-RUN_ARGS := $(filter-out banner run shutdown shell kickstart package bootstrap \
-	reset connect nuke help env,$(RUN_ARGS_UNFILTER))
+RUN_ARGS := $(filter-out $(VALID_TARGETS),$(RUN_ARGS_UNFILTER))
 $(eval $(RUN_ARGS):;@:)
 
 #---show the banner if no targets
 banner:
 	@sed -n 1,10p deploy/README.md
 
+#---warn the user if the target is invalid
+ifneq ($(filter-out $(VALID_TARGETS),$(word 1,$(RUN_ARGS_UNFILTER))),)
+	$(info [ERROR] "$(word 1,$(RUN_ARGS_UNFILTER))" is not a valid make target try "make help")
+	$(error [ERROR] exiting)
+endif
+
 #---useful hints
-help:
+help: 
 	@tail -n +11 deploy/README.md
 
 #---do not target arguments if using python

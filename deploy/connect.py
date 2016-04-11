@@ -4,10 +4,12 @@
 Interpret a user input (typically connect.yaml) in order to set up the "factory".
 See connect.yaml for example connections.
 
-Should we delete the site before connecting? Leave everything else??
+This file either creates a new "connection" from scratch OR updates any changes to a "connection" described
+in the yaml file. This incremental design is key to developing these codes on-the-fly and allowing for many
+varied use cases to work in the same pipeline. The use cases are provided as examples in the default yaml 
+file. 
 
-DEVMODE is deprecated and needs deleted
-ALSO TYPE DOES NOTHING.
+NEEDS LIST OF IMPORTANT FLAGS
 """
 
 import os,sys,re,subprocess,shutil,glob,json
@@ -17,9 +19,10 @@ import yaml
 #---user must supply the yaml file to describe the connections
 if len(sys.argv)!=2: raise Exception('\n[USAGE] make connect <yaml>') 
 with open(sys.argv[1]) as fp: sets = yaml.load(fp.read())
+#---ignore examples (and later we will skip any entries with "enabled: false")
 if 'examples' in sets: del sets['examples']
 
-#---disallow any project named dev
+#---disallow any project named dev to protect the codes in that folder
 if any([i=='dev' for i in sets]): 
 	raise Exception('[ERROR] cannot name a project "dev" in %s'%sys.argv[1])
 
@@ -158,6 +161,7 @@ def mkdir_or_report(dn):
 		os.mkdir(dn)
 		print "[STATUS] created %s"%dn
 
+#---the development path must be within the factory
 absolute_environment_path = abspath('env')
 
 def bash(cmd,log=None,cwd='./',env=False):
@@ -177,28 +181,32 @@ if not os.path.isdir('env'):
 #---master loop over all connections
 for connection_name,specs in sets.items():
 
+	#---skip a connection if enabled is false
+	if not specs.get('enable',True): continue
+
+	#---the site is equivalent to a django project
+	#---the site draws on either prepackaged apps in the pack folder or the in-development versions in dev
+	#---since the site has no additional data except taht specified in connect.yaml, we can always remake it
 	if os.path.isdir('site/'+connection_name):
 		print "[STATUS] removing the site for \"%s\" to remake it"%connection_name
 		shutil.rmtree('site/'+connection_name)
 
-	#---regex PROJECT_NAME to the connection name in the paths sub-dictionary
-	for key,val in specs['paths'].items(): 
-		if type(val)==list: 
-			for ii,i in enumerate(val): val[ii] = re.sub('PROJECT_NAME',connection_name,i)
-		else: 
-			if val: specs['paths'][key] = re.sub('PROJECT_NAME',connection_name,val)
+	#---regex PROJECT_NAME to the connection names in the paths sub-dictionary	
+	#---note that "PROJECT_NAME" is therefore protected and always refers to the top-level key in connect.yaml
+	#---! note that you cannot use PROJECT_NAME in spots currently
 	for key,val in specs.items():
 		if type(val)==str: specs[key] = re.sub('PROJECT_NAME',connection_name,val)
 		elif type(val)==list:
 			for ii,i in enumerate(val): val[ii] = re.sub('PROJECT_NAME',connection_name,i)
 
-	#---make directories if they are absent
-	#---! is this necessary?
+	#---make local directories if they are absent or do nothing if the user points to existing data
 	root_data_dir = 'data/'+connection_name
+	#---always make data/PROJECT_NAME for the default simulation_spot therein
 	mkdir_or_report(root_data_dir)
-	for key in ['post_plot_spot','post_data_spot','dropspot']: 
-		mkdir_or_report(abspath(specs['paths'][key]))
-	mkdir_or_report(abspath(specs['paths']['dropspot']+'/sources/'))
+	for key in ['post_data_spot','post_plot_spot','simulation_spot']: 
+		mkdir_or_report(abspath(specs[key]))
+	#---we always include a "sources" folder in the new simulation spot for storing input files
+	mkdir_or_report(abspath(specs['simulation_spot']+'/sources/'))
 
 	#---check if database exists and if so, don't make superuser
 	make_superuser = not os.path.isfile(specs['database'])
@@ -206,13 +214,13 @@ for connection_name,specs in sets.items():
 	#---interpret paths from connect.yaml for PROJECT_NAME/PROJECT_NAME/settings.py in the django project
 	#---these paths are all relative to the rootspot, the top directory for the factory codes
 	settings_paths = {
+		'rootspot':os.path.join(os.getcwd(),''),
 		'automacs_upstream':specs['automacs'],
 		'project_name':connection_name,
-		'plotspot':abspath(specs['paths']['post_plot_spot']),
-		'postspot':abspath(specs['paths']['post_data_spot']),
-		'dropspot':abspath(specs['paths']['dropspot']),
+		'plotspot':abspath(specs['post_plot_spot']),
+		'postspot':abspath(specs['post_data_spot']),
+		'dropspot':abspath(specs['simulation_spot']),
 		'calcspot':specs['calc'],
-		'rootspot':os.path.join(os.getcwd(),''),
 		}
 
 	#---prepare additions to the settings.py and urls.py
@@ -230,22 +238,13 @@ for connection_name,specs in sets.items():
 		#---must specify a database location
 		if 'database' in specs: 
 			fp.write("DATABASES['default']['NAME'] = \"%s\"\n"%os.path.abspath(specs['database']))
-		if 'lockdown' in specs:
-			fp.write(lockdown_extra%specs['lockdown'])
+		if 'lockdown' in specs: fp.write(lockdown_extra%specs['lockdown'])
 		fp.write(get_omni_dataspots)
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
-	#---kickstart handles most of the project setup
-	if 0:
-		cmd = 'make -s kickstart %s %s %s %s %s'%(
-			connection_name,settings_append_fn,urls_append_fn,
-			specs['omnicalc'],specs['automacs'])
-		print '[STATUS] running "%s"'%cmd
-	if 0: subprocess.check_call(cmd,shell=True)
 	#---replacing bash script kickstart.sh here
-	#---to run from python we have to source every time
+	#---to run from python we have to drop into the enviroment every time
 	drop = 'source env/bin/activate && '
-	#---! no logging below
 	for app in ['simulator','calculator']:
 		if not os.path.isdir('pack/%s'%app): bash(drop+'make -s package %s'%app,log='logs/log-pack-%s'%app)
 	bash('django-admin startproject %s'%connection_name,
@@ -258,9 +257,11 @@ for connection_name,specs in sets.items():
 	if not os.path.isdir('data/%s/sims/docs'%connection_name):
 		bash('git clone %s data/%s/sims/docs'%(specs['automacs'],connection_name),
 			log='logs/log-%s-git-amx'%connection_name)
-	bash('make docs',cwd='data/%s/sims/docs'%connection_name,log='logs/log-$1-docs',env=True)
-	bash('make config defaults',cwd='calc/%s'%connection_name,
-		log='logs/log-%s-omnicalc-config'%connection_name,env=True)
+	bash('make docs',cwd='data/%s/sims/docs'%connection_name,
+		log='logs/log-%s-automacs-docs'%connection_name,env=True)
+	#---! no more config?
+	#bash('make config defaults',cwd='calc/%s'%connection_name,
+	#	log='logs/log-%s-omnicalc-config'%connection_name,env=True)
 	for dn in ['calc/%s/calcs'%connection_name,'calc/%s/calcs/scripts'%connection_name]: 
 		if not os.path.isdir(dn): os.mkdir(dn)
 	bash('make docs',cwd='calc/%s'%connection_name,log='logs/log-%s-omnicalc-docs'%connection_name,env=True)
@@ -278,7 +279,6 @@ for connection_name,specs in sets.items():
 			stdin=subprocess.PIPE,stderr=subprocess.PIPE,stdout=open(os.devnull,'w'),
 			shell=True,executable='/bin/bash')
 		catch = p.communicate(input=su_script)[0]
-	#---report
 	print "[STATUS] new project \"%s\" is stored at ./data/%s"%(connection_name,connection_name)
 	print "[STATUS] replace with a symlink if you wish to store the data elsewhere"
 	#---done kickstart
@@ -289,76 +289,64 @@ for connection_name,specs in sets.items():
 		if os.path.isdir(dn): shutil.rmtree(dn)
 
 	#---if the repo points nowhere we prepare a calcs folder for omnicalc (repo is required)
-	new_calcs_repo = not (os.path.isdir(specs['repo']) and os.path.isdir(specs['repo']+'/.git'))
+	new_calcs_repo = not (os.path.isdir(specs['repo']) and (
+		os.path.isdir(specs['repo']+'/.git') or os.path.isfile(specs['repo']+'/HEAD')))
 	if new_calcs_repo:
 		print "[STATUS] repo path %s does not exist so we are making a new one"%specs['repo']
 		mkdir_or_report(specs['calc']+'/calcs')
-		subprocess.check_call('git init',shell=True,cwd=specs['calc']+'/calcs',stdout=open(os.devnull,'w'))
+		bash('git init',cwd=specs['calc']+'/calcs',log='logs/log-%s-new-calcs-repo')
 		#---! AUTO POPULATE WITH CALCULATIONS HERE
 	#---if the repo is a viable git repo then we clone it
-	else: subprocess.check_call('git clone '+specs['repo']+' '+specs['calc']+'/calcs',shell=True)
+	else: 
+		bash('git clone '+specs['repo']+' '+specs['calc']+'/calcs',cwd='./',
+			log='logs/log-%s-clone-calcs-repo'%connection_name)
 	
 	#---create directories if they are missing
 	mkdir_or_report(specs['calc']+'/calcs/specs/')
 	mkdir_or_report(specs['calc']+'/calcs/scripts/')
 	subprocess.check_call('touch __init__.py',cwd=specs['calc']+'/calcs/scripts',
 		shell=True,executable='/bin/bash')
+
 	#---if startup then we load some common calculations (continued below)
 	if specs['startup']: 
 		for fn in glob.glob('deploy/preloads/*'): shutil.copy(fn,specs['calc']+'/calcs/')
-	#---add these calculations to the database
+	#---! add these calculations to the database (possibly for FACTORY)
 	if 0: subprocess.check_call(
 		'source env/bin/activate && python ./deploy/register_calculation.py %s %s %s'%
 		(specs['site'],connection_name,specs['calc']),shell=True,executable='/bin/bash')
-	if 0:
-		def unpacker(fn,key):
-			d = {};execfile(fn,d);return d[key]
-		project_location = specs['site']
-		sys.path.insert(0,project_location)
-		os.environ.setdefault("DJANGO_SETTINGS_MODULE",connection_name+".settings")
-		if 'django' not in globals(): import django
-		else: django = reload(django)
-		django.setup()
-		if 'this_workspace' not in globals(): import base.workspace.Workspace as this_workspace
-		else: this_workspace = reload(this_workspace)
-		if workspace == None: workspace = unpacker(conf_paths,'paths')['workspace_spot']
-		work = this_workspace(workspace,previous=False)
-		import pdb;pdb.set_trace()
-		sys.path.remove(specs['calc'])
 
-	#---given a previous omnicalc we consult paths.py in order to set up the new one
-	with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
-	default_paths = {}
-	if 'parse_specs_config' not in specs or not specs['parse_specs_config']:
-		paths_fn = specs['calc']+'/paths.py'
-	else: paths_fn = specs['parse_specs_config']
-	execfile(paths_fn,default_paths)
-	new_paths = deepcopy(default_paths['paths'])
-	new_paths['data_spots'] = [abspath(i) for i in specs['paths']['data_spots']]
-	new_paths['post_data_spot'] = settings_paths['postspot']
-	new_paths['post_plot_spot'] = settings_paths['plotspot']
-	new_paths['workspace_spot'] = abspath(root_data_dir+'/workspace')
-	#---specs files must be relative to the omnicalc root
+	#---write the paths.yaml for the new omnicalc with the correct spots, paths, etc
+	with open(os.path.join(specs['calc'],'paths.yaml')) as fp: default_paths = yaml.load(fp.read())
+	default_paths['post_data_spot'] = settings_paths['postspot']
+	default_paths['post_plot_spot'] = settings_paths['plotspot']
+	default_paths['workspace_spot'] = abspath(specs['workspace_spot'])
+	default_paths['timekeeper'] = specs.get('timekeeper',False)
+	default_paths['spots'] = specs['spots']
+	with open(os.path.join(specs['calc'],'paths.yaml'),'w') as fp: yaml.dump(default_paths,fp)
+	
+	#---
+	continue
+
 	if 0:
-		if not specs['paths']['specs_file']:
-			#---automatically detect any yaml files in the specs folder
-			new_paths['specs_file'] = glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')
-		else:
-			custom_specs = specs['paths']['specs_file']
-			if type(custom_specs)==str: custom_specs = [custom_specs]
-			new_paths['specs_file'] = ['calcs/specs/'+os.path.basename(fn) 
-				for fn in glob.glob(specs['calc']+'/calcs/specs/meta*.yaml')]
-	new_paths_file = {'paths':new_paths,'parse_specs':default_paths['parse_specs']}
-	with open(specs['calc']+'/paths.py','w') as fp:
-		fp.write('#!/usr/bin/python\n\n')
-		for key in new_paths_file:
-			fp.write('%s = %s\n\n'%(key,
-			json.dumps(new_paths_file[key],indent=4,ensure_ascii=False).
-			replace('\\\\','\\').replace('    ','\t')))
+		#---given a previous omnicalc we consult paths.py in order to set up the new one
+		with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
+		default_paths = {}
+		if 'parse_specs_config' not in specs or not specs['parse_specs_config']:
+			paths_fn = specs['calc']+'/paths.py'
+		else: paths_fn = specs['parse_specs_config']
+		execfile(paths_fn,default_paths)
+		new_paths = deepcopy(default_paths['paths'])
+		new_paths['data_spots'] = [abspath(i) for i in specs['paths']['data_spots']]
+		new_paths['post_data_spot'] = settings_paths['postspot']
+		new_paths['post_plot_spot'] = settings_paths['plotspot']
+		new_paths['workspace_spot'] = abspath(root_data_dir+'/workspace')
+		new_paths_file = {'paths':new_paths,'parse_specs':default_paths['parse_specs']}
+
 	#---previous omnicalc users may have a specific gromacs.py that they wish to use
 	if 'omni_gromacs_config' in specs and specs['omni_gromacs_config']:
 		gromacs_fn = os.path.abspath(os.path.expanduser(specs['omni_gromacs_config']))
 		shutil.copyfile(gromacs_fn,specs['calc']+'/gromacs.py')
+
 	#---assimilate old data if available
 	subprocess.check_call('source env/bin/activate && make -s -C '+specs['calc']+' export_to_factory %s %s'%
 		(connection_name,settings_paths['rootspot']+specs['site']),shell=True,executable='/bin/bash')
@@ -368,50 +356,3 @@ for connection_name,specs in sets.items():
 	with open('logs/vhost_%s.conf'%connection_name,'w') as fp: fp.write(conf)
 	print "[STATUS] connected %s!"%connection_name
 	print "[STATUS] start with \"make run %s\""%connection_name
-
-"""
-# FACTORY-generated paths.yaml
-post_data_spot: post
-post_plot_spot: plot
-workspace_spot: workspace
-how_to_handle_names: name is just the spot name
-spots:
-  # the spot name below distinguishes multiple imported spots (batches of data)
-  some_generic_name_for_new_simulations_from_factory:
-    # 
-    namer: "lambda spot,top = '%s-%s'%(spot,top)"
-    # location of the spot_directory (you can change this and reconnect if you move the data)
-    route_to_data: /home/rpb/omicron
-    # permanent parent folder for this spot (stored in the database)
-    spot_directory: dataset-project-ptdins
-    # rules for parsing the data in the spot directories
-    regexes:
-      # each simulation folder in the spot directory must match the top regex
-      top: "(membrane-v[0-9]+)"
-      # each simulation folder must have trajectories in subfolders that match the step regex (can be null)
-      step: "([stuv])([0-9]+)-([^\/]+)"
-      # each part regex is parsed by omnicalc
-      part: 
-        - "md.part([0-9]{4})\.xtc"
-        - "md.part([0-9]{4})\.trr"
-        - "(system|system-input|structure)\.(gro|pdb)"
-  # the spot name below distinguishes multiple imported spots (batches of data)
-  ptdins:
-    #
-    namer: "lambda spot,top = '%s-%s'%(spot,top)"
-    # location of the spot_directory (you can change this and reconnect if you move the data)
-    route_to_data: /home/rpb/omicron
-    # permanent parent folder for this spot (stored in the database)
-    spot_directory: dataset-project-ptdins
-    # rules for parsing the data in the spot directories
-    regexes:
-      # each simulation folder in the spot directory must match the top regex
-      top: "(membrane-v[0-9]+)"
-      # each simulation folder must have trajectories in subfolders that match the step regex (can be null)
-      step: "([stuv])([0-9]+)-([^\/]+)"
-      # each part regex is parsed by omnicalc
-      part: 
-        - "md.part([0-9]{4})\.xtc"
-        - "md.part([0-9]{4})\.trr"
-        - "(system|system-input|structure)\.(gro|pdb)"
-"""

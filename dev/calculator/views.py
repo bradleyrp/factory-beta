@@ -32,8 +32,8 @@ def collect_images():
 	Collect the names of all images in the plot directory and read their metadata.
 	"""
 
-	omni_paths = {}
-	execfile(os.path.join(settings.ROOTSPOT,settings.CALCSPOT,'paths.py'),omni_paths)
+	#omni_paths = {}
+	#execfile(os.path.join(settings.ROOTSPOT,settings.CALCSPOT,'paths.py'),omni_paths)
 	image_fns = [os.path.basename(fn) for fn in glob.glob(settings.PLOTSPOT+'/*.png')]
 	names_path_meta = [(
 		re.sub('_',' ',re.findall('^fig\.([^\.]+)\.',fn)[0]),fn,
@@ -233,6 +233,7 @@ def view_settings(request):
 
 	"""
 	Show the settings for a particular instance of calculator.
+	THIS APPEARS TO BE A DEAD END CONSIDER DELETING
 	"""
 	
 	#---! hardcoded
