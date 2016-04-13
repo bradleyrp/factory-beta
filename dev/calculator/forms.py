@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.forms import formset_factory
 from simulator.models import *
-
+import glob,re
 
 class collection_form(forms.ModelForm):
 
@@ -92,10 +92,25 @@ class calculation_form(forms.ModelForm):
 				'field "{fieldname}" is required'.format(fieldname=field.label)}
 		collections = [[obj.id,obj.name] for obj in Collection.objects.all()]
 		self.fields['collections'] = forms.MultipleChoiceField(required=True,choices=collections)
-		for field in self.fields: self.fields[field].label = field.lower()
+
+		#---detect calculation names from scripts in the calcs folder
+		regex_valid_calculation = '^(?!(?:plot|pipeline)-)(.+)\.py$'
+		fns = [os.path.basename(fn) for fn in glob.glob('calc/proteins/calcs/*.py')]
+		valid_calcnames = [(-1,i) for i in [re.findall(regex_valid_calculation,fn)[0] 
+			for fn in fns if re.match(regex_valid_calculation,fn)]]
+		slice_names = [(-1,i) for i in list(set([obj.name for obj in Slice.objects.all()]))]
+		self.fields['name'] = forms.MultipleChoiceField(required=True,choices=valid_calcnames)
+
+		#---get valid slices names (note this is the only user-facing slice name list)
+		#---dummy object ids for the slice_name choice
+		slice_names = [(-1,i) for i in list(set([obj.name for obj in Slice.objects.all()]))]
+		if slice_names != []:
+			self.fields['slice_name'] = forms.MultipleChoiceField(required=True,choices=slice_names)
+		for field in self.fields: 
+			self.fields[field].label = re.sub('_',' ',field.lower())
 
 	def clean(self):
-		
+	
 		cleaned_data = super(calculation_form, self).clean()
 		collections = cleaned_data.get("collections")
 		slice_name = cleaned_data.get("slice_name")

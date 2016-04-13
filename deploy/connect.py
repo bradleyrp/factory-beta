@@ -322,26 +322,14 @@ for connection_name,specs in sets.items():
 	default_paths['workspace_spot'] = abspath(specs['workspace_spot'])
 	default_paths['timekeeper'] = specs.get('timekeeper',False)
 	default_paths['spots'] = specs['spots']
-	with open(os.path.join(specs['calc'],'paths.yaml'),'w') as fp: yaml.dump(default_paths,fp)
+	#---in case spots refers to a local directory we use full paths
+	for spotname in specs['spots']:
+		specs['spots'][spotname]['route_to_data'] = re.sub(
+			'PROJECT_NAME',connection_name,os.path.abspath(specs['spots'][spotname]['route_to_data']))
+	#---final substitutions so PROJECT_NAME can be used anywhere
+	with open(os.path.join(specs['calc'],'paths.yaml'),'w') as fp: 
+		fp.write(re.sub('PROJECT_NAME',connection_name,yaml.dump(default_paths)))
 	
-	#---
-	continue
-
-	if 0:
-		#---given a previous omnicalc we consult paths.py in order to set up the new one
-		with open(specs['calc']+'/paths.py') as fp: default_paths = fp.read()
-		default_paths = {}
-		if 'parse_specs_config' not in specs or not specs['parse_specs_config']:
-			paths_fn = specs['calc']+'/paths.py'
-		else: paths_fn = specs['parse_specs_config']
-		execfile(paths_fn,default_paths)
-		new_paths = deepcopy(default_paths['paths'])
-		new_paths['data_spots'] = [abspath(i) for i in specs['paths']['data_spots']]
-		new_paths['post_data_spot'] = settings_paths['postspot']
-		new_paths['post_plot_spot'] = settings_paths['plotspot']
-		new_paths['workspace_spot'] = abspath(root_data_dir+'/workspace')
-		new_paths_file = {'paths':new_paths,'parse_specs':default_paths['parse_specs']}
-
 	#---previous omnicalc users may have a specific gromacs.py that they wish to use
 	if 'omni_gromacs_config' in specs and specs['omni_gromacs_config']:
 		gromacs_fn = os.path.abspath(os.path.expanduser(specs['omni_gromacs_config']))

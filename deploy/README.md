@@ -9,17 +9,36 @@
 
 [NOTE] use 'make help' for details
 
-# start from scratch
+# QUICKSTART GUIDE
 
-Set up the <connect.yaml> with the appropriate name and paths. Decide whether you want an isolated virtual environment (which can be slow) or use the system flag below to use global site packages.
+Copy <connect.yaml> to <connect.local.yaml>.
+Use examples in <connect.yaml> to set up paths for your data.
+Install system-level dependencies listed below.
+If you already have mathematics libraries (e.g. scipy) installed
+then make sure you use the "system" flag when you make the environment.
+Start from scratch with:
 
-make nuke && make env [system] && make connect <connect.yaml> && make run <project>
+	"make nuke && make env system && make connect connect.local.yaml"
 
-# refresh connections to project data (deletes and creates the site without changing anything else)
+Then open a project using: "make run <project>". If you change 
+paths in connect.local.yaml you can "refresh" the setup by running:
+"make connect connect.local.yaml" again. This preserves your omnicalc
+codes found in "./calcs" but allows you to change any path.
 
-make connect connect.yaml
+# REQUIRES
 
-# start a local server for a project
+Factory will create a local python virtual environment which will
+compile and install most dependencies. However, the simulator requires
+a local GROMACS installation, and the factory uses background "workers"
+using Celery, which depends on starting a redis queue in the background
+for coordinating the simulation queue. 
 
-make run <project>
+[INCOMING DOCUMENTATION BELOW!]
 
+## set up a redis queue
+## set up apache
+## tunnelport
+
+running icon when calculating
+queue for simulator
+dropdowns for calculation to show slices

@@ -42,7 +42,9 @@ $.ajax({
             document.getElementById('destination').scrollTop = 
                 document.getElementById('destination').scrollHeight;
             document.getElementById("destination").style.overflow = "hidden"; 
-        } else { document.getElementById("destination").style.overflow="visible"; }
+        } else { 
+            document.getElementById("destination").style.overflow="visible"; 
+        }
     },
     failure: function(data) { 
         $('#result').append("ERROR");

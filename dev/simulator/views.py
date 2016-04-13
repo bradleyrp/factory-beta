@@ -124,10 +124,12 @@ def find_simulation(code):
 	gleaned from the omnicalc paths.py file in order to find a current simulation code.
 	"""
 
-	path_candidates = list(set([settings.DROPSPOT]+settings.DATASPOTS))
-        locations = [pc+'/'+code for pc in path_candidates if os.path.isdir(pc+'/'+code)]
-        assert len(locations)==1
-        location, = locations
+	#---! note that we have to handle old/new spots paths here!!!
+	#---! observed tab then eight-spaces in the same indent block -- need to consider adding a hook
+	path_candidates = [settings.DROPSPOT]
+	locations = [pc+'/'+code for pc in path_candidates if os.path.isdir(pc+'/'+code)]
+	assert len(locations)==1
+	location, = locations
 	return location
 
 def detail_simulation(request,id):

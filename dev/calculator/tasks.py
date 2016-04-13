@@ -22,7 +22,7 @@ def sherpacalc(job_row_id,autoreload=False,log='log',cwd='./'):
 	this_job.save()
 	job.communicate()
 	#---! should we always plot?
-	job = subprocess.Popen('make plot log=%s'%log,cwd=cwd,
+	job = subprocess.Popen('make plot plotlog=%s'%log,cwd=cwd,
 		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	this_job.pid = job.pid
 	this_job.save()

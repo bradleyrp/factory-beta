@@ -8,8 +8,7 @@ from base.tools import status
 def protein_rmsd(grofile,trajfile,**kwargs):
 
 	"""
-	LIPID ABSTRACTOR
-	Reduce a bilayer simulation to a set of points.
+	Compute the RMSD of a protein.
 	"""
 
 	#---unpack
@@ -19,7 +18,7 @@ def protein_rmsd(grofile,trajfile,**kwargs):
 	#---prepare universe	
 	slice_name = kwargs['calc']['slice_name']
 	group = kwargs['calc']['group']
-	grofile,trajfile = [work.slices[sn][slice_name][group][i] for i in ['gro','xtc']]
+	grofile,trajfile = [work.slice(sn)[slice_name][group][i] for i in ['gro','xtc']]
 	uni = MDAnalysis.Universe(work.postdir+grofile,work.postdir+trajfile)
 	nframes = len(uni.trajectory)
 	protein = uni.select_atoms('protein and name CA')

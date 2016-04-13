@@ -213,7 +213,7 @@ def refresh_times(request):
 		sn = sim.code	
 		miniscript = ';'.join([
 			"python -c \"execfile('./omni/base/header.py')",
-			"print '>>>'+str(work.get_timeseq('%s'))\"",
+			"print '>>>'+str(work.get_timeseries('%s'))\"",
 			])
 		proc = subprocess.Popen(miniscript%sn,cwd=settings.CALCSPOT,
 			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -222,11 +222,10 @@ def refresh_times(request):
 			regex = '^>>>(.+)$'
 			selected, = [re.findall(regex,i)[0] for i in ('\n'.join(catch)).split('\n') if re.match(regex,i)]
 			timeseq = eval(selected)
-			startstop = min([i[0][0] for i in timeseq]),max([i[0][1] for i in timeseq])
+			startstop = min([i[-1][0] for i in timeseq]),max([i[-1][1] for i in timeseq])
 			sim.time_sequence = '-'.join(['%.f'%(i/1000.) for i in startstop])
 			sim.save()
-		except Exception as e: 
-			print "[ERROR] exception: %s"%e
+		except Exception as e: print "[ERROR] exception: %s"%e
 	return HttpResponseRedirect(reverse('calculator:index'))
 
 def view_settings(request):
