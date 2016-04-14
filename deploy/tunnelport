@@ -1,14 +1,20 @@
 #!/bin/bash
 
 <<notes
-This bash script allows you to tunnel port 8000 from a remote machine 
-described in ~/.ssh/config to the current machine. 
-We use this to view local web servers over SSH.
+use this script to tunnel ssh connections
+note that without an SSH key you will have to enter passwords for each port
 notes
 
-port=$2
-if [ -z $port ];then
-ssh -L 8000:127.0.0.1:8000 $1 -N
-else
-ssh -L $2:127.0.0.1:$2 $1 -N
-fi
+starts=(8000 5555)
+if [ -z $1 ]; then echo "[USAGE] tunnelport alias|end [port]"; exit 1; fi
+if [ -z $2 ]; then ports=(8000 5555) 
+else ports=($2 $(($2+1))); fi
+for i in "${!ports[@]}"; do
+  if [ $1 = "end" ]; then
+  	echo "[STATUS] ending ALL tunnels from ${starts[$i]}"
+    ps -ef | egrep "[s]sh -L\s*[0-9]+:[0-9\.]+:${starts[$i]}" | awk '{print $2}' | xargs kill
+  else
+    echo "[STATUS] tunneling port ${starts[$i]} from $1 to ${ports[$i]}"
+    ssh -L ${ports[$i]}:127.0.0.1:${starts[$i]} $1 -fN
+  fi
+done

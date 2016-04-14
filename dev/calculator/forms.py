@@ -96,16 +96,15 @@ class calculation_form(forms.ModelForm):
 		#---detect calculation names from scripts in the calcs folder
 		regex_valid_calculation = '^(?!(?:plot|pipeline)-)(.+)\.py$'
 		fns = [os.path.basename(fn) for fn in glob.glob('calc/proteins/calcs/*.py')]
-		valid_calcnames = [(-1,i) for i in [re.findall(regex_valid_calculation,fn)[0] 
+		valid_calcnames = [(i,i) for i in [re.findall(regex_valid_calculation,fn)[0] 
 			for fn in fns if re.match(regex_valid_calculation,fn)]]
-		slice_names = [(-1,i) for i in list(set([obj.name for obj in Slice.objects.all()]))]
-		self.fields['name'] = forms.MultipleChoiceField(required=True,choices=valid_calcnames)
+		self.fields['name'] = forms.ChoiceField(required=True,choices=valid_calcnames)
 
 		#---get valid slices names (note this is the only user-facing slice name list)
 		#---dummy object ids for the slice_name choice
-		slice_names = [(-1,i) for i in list(set([obj.name for obj in Slice.objects.all()]))]
+		slice_names = [(i,i) for i in list(set([obj.name for obj in Slice.objects.all()]))]
 		if slice_names != []:
-			self.fields['slice_name'] = forms.MultipleChoiceField(required=True,choices=slice_names)
+			self.fields['slice_name'] = forms.ChoiceField(required=True,choices=slice_names)
 		for field in self.fields: 
 			self.fields[field].label = re.sub('_',' ',field.lower())
 
@@ -113,7 +112,8 @@ class calculation_form(forms.ModelForm):
 	
 		cleaned_data = super(calculation_form, self).clean()
 		collections = cleaned_data.get("collections")
-		slice_name = cleaned_data.get("slice_name")
+		#---! hackish handling unicode below
+		slice_name = cleaned_data['slice_name']
 		for collection_id in collections:
 			collection = Collection.objects.all().get(pk=collection_id)
 			okay = False
