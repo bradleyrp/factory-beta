@@ -251,7 +251,8 @@ for connection_name,specs in sets.items():
 		log='logs/log-%s-startproject'%connection_name,cwd='site/',env=True)
 	bash('cat %s >> site/%s/%s/settings.py'%(settings_append_fn,connection_name,connection_name))
 	bash('cat %s >> site/%s/%s/urls.py'%(urls_append_fn,connection_name,connection_name))
-	if not os.path.isdir('calc/%s'%connection_name):
+	omnicalc_previous = os.path.isdir('calc/%s'%connection_name)
+	if not omnicalc_previous:
 		bash('git clone %s calc/%s'%(specs['omnicalc'],connection_name),
 			 log='logs/log-%s-git-omni'%connection_name)
 	if not os.path.isdir('data/%s/sims/docs'%connection_name):
@@ -284,9 +285,9 @@ for connection_name,specs in sets.items():
 	#---done kickstart
 
 	#---remove blank calcs and local post/plot from default omnicalc configuration
-	for folder in ['post','plot','calcs']:
-		dn = 'calc/%s/%s'%(connection_name,folder)
-		if os.path.isdir(dn): shutil.rmtree(dn)
+	#for folder in ['post','plot']:
+	#	dn = 'calc/%s/%s'%(connection_name,folder)
+	#	if os.path.isdir(dn): shutil.rmtree(dn)
 
 	#---if the repo points nowhere we prepare a calcs folder for omnicalc (repo is required)
 	new_calcs_repo = not (os.path.isdir(specs['repo']) and (
@@ -298,18 +299,25 @@ for connection_name,specs in sets.items():
 		#---! AUTO POPULATE WITH CALCULATIONS HERE
 	#---if the repo is a viable git repo then we clone it
 	else: 
-		bash('git clone '+specs['repo']+' '+specs['calc']+'/calcs',cwd='./',
-			log='logs/log-%s-clone-calcs-repo'%connection_name)
+		if not specs['repo']==specs['calc']+'/calcs':
+			try: bash('git clone '+specs['repo']+' '+specs['calc']+'/calcs',cwd='./',
+				log='logs/log-%s-clone-calcs-repo'%connection_name)
+			except:
+				print '[WARNING] tried to clone %s into %s but it exists'%(
+					specs['repo'],specs['calc']+'/calcs')
 	
 	#---create directories if they are missing
 	mkdir_or_report(specs['calc']+'/calcs/specs/')
 	mkdir_or_report(specs['calc']+'/calcs/scripts/')
+	mkdir_or_report(specs['calc']+'/calcs/codes/')
 	subprocess.check_call('touch __init__.py',cwd=specs['calc']+'/calcs/scripts',
 		shell=True,executable='/bin/bash')
 
 	#---if startup then we load some common calculations (continued below)
 	if specs['startup']: 
-		for fn in glob.glob('deploy/preloads/*'): shutil.copy(fn,specs['calc']+'/calcs/')
+		bash('rsync -ariv deploy/preloads %s/calcs/'%specs['calc'],
+			cwd='./',log='logs/log-%s-preloads'%connection_name)
+
 	#---! add these calculations to the database (possibly for FACTORY)
 	if 0: subprocess.check_call(
 		'source env/bin/activate && python ./deploy/register_calculation.py %s %s %s'%
@@ -335,6 +343,11 @@ for connection_name,specs in sets.items():
 		gromacs_fn = os.path.abspath(os.path.expanduser(specs['omni_gromacs_config']))
 		shutil.copyfile(gromacs_fn,specs['calc']+'/gromacs.py')
 
+	#---refresh in case you added another spot
+	print '[STATUS] running make in %s'%specs['calc']
+	if omnicalc_previous:
+		subprocess.check_call('source env/bin/activate && make -s -C '+specs['calc']+' refresh',
+			shell=True,executable='/bin/bash')
 	#---assimilate old data if available
 	subprocess.check_call('source env/bin/activate && make -s -C '+specs['calc']+' export_to_factory %s %s'%
 		(connection_name,settings_paths['rootspot']+specs['site']),shell=True,executable='/bin/bash')

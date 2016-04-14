@@ -1,5 +1,5 @@
 
-# MANY USE CASES --- ENABLE PROJECTS with "enable: true"
+# MANY USE CASES --- ENABLE PROJECTS with "enable: false"
 
 # "NEW" use case
 #   concept:           starting from scratch
@@ -8,7 +8,7 @@
 #   creates:           new simulation spot, omnicalc, calcs repo, post/plot folders if necessary
 #   last tested:       2016.4.12 by rpb on dark
 project:
-  enable: true
+  enable: false
   development: true
   site: site/PROJECT_NAME  
   calc: calc/PROJECT_NAME
@@ -62,7 +62,7 @@ project:
 #   creates:           new simulation dropspot, omnicalc, calcs repo, post/plot folders if necessary
 #   last tested:       by rpb on dark on 2016.2.24
 proteins:
-  enable: true
+  enable: false
   development: true
   site: site/PROJECT_NAME  
   calc: calc/PROJECT_NAME
@@ -142,7 +142,7 @@ proteins:
 #   creates:           new simulation dropspot, omnicalc, folders if missing
 #   last tested:       by rpb on green on 2016.2.24
 ptdins:
-  enable: true
+  enable: false
   development: true
   site: site/PROJECT_NAME  
   calc: calc/PROJECT_NAME
