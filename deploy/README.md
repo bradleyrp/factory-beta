@@ -35,12 +35,9 @@ for coordinating the simulation queue.
 
 1. Development headers for scientific libraries (e.g. scipy).
    these are typically installed 
-2. Set up 
-
-OSX redis
-
-brew install redis
-ln -sfv /usr/local/opt/redis/*.plist ~/Library/LaunchAgents
+2. Install redis and start with "redis-server deploy/redis.conf"
+3. Install python's virtual environment (brew install virtualenv)
+4. Install hdf5 headers (typically "hdf5-devel")
 
 # REMOTE ACCESS
 
@@ -51,22 +48,3 @@ Then, copy ./deploy/tunnelport to your $PATH with execute
 permissions. You can then run: "tunnelport <alias>" to
 open two tunnels: one for the site and the other for the
 celery workers.
-
-
-[INCOMING DOCUMENTATION BELOW!]
-
-1. development headers
-2. redis 
-3. COMMAND TO REDIS
-4. GROMACS
-5. virtualenv
-
-## set up a redis queue
-## set up apache
-## tunnelport
-running icon when calculating
-queue for simulator
-final start-to-finish test on a protein for tutorial
-TRR for icam project
-ptdins calculations
-ENTH calculations
