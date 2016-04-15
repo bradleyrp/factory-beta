@@ -315,7 +315,7 @@ for connection_name,specs in sets.items():
 
 	#---if startup then we load some common calculations (continued below)
 	if specs['startup']: 
-		bash('rsync -ariv deploy/preloads %s/calcs/'%specs['calc'],
+		bash('rsync -ariv deploy/preloads/ %s/calcs/'%specs['calc'],
 			cwd='./',log='logs/log-%s-preloads'%connection_name)
 
 	#---! add these calculations to the database (possibly for FACTORY)
