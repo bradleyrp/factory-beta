@@ -297,7 +297,7 @@ for connection_name,specs in sets.items():
 	if new_calcs_repo:
 		print "[STATUS] repo path %s does not exist so we are making a new one"%specs['repo']
 		mkdir_or_report(specs['calc']+'/calcs')
-		bash('git init',cwd=specs['calc']+'/calcs',log='logs/log-%s-new-calcs-repo')
+		bash('git init',cwd=specs['calc']+'/calcs',log='logs/log-%s-new-calcs-repo'%connection_name)
 		#---! AUTO POPULATE WITH CALCULATIONS HERE
 	#---if the repo is a viable git repo then we clone it
 	else: 
