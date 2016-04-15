@@ -267,7 +267,9 @@ for connection_name,specs in sets.items():
 		if not os.path.isdir(dn): os.mkdir(dn)
 	bash('make docs',cwd='calc/%s'%connection_name,log='logs/log-%s-omnicalc-docs'%connection_name,env=True)
 	shutil.copy('deploy/celery_source.py','site/%s/%s/celery.py'%(connection_name,connection_name))
-	bash('sed -i "s/multiplexer/%s/g" site/%s/%s/celery.py'%
+	#---BSD/OSX sed does not do in-place replacements
+	"perl -pi -e s,multiplexer,project,g site/project/project/celery.py"
+	bash('perl -pi -e s,multiplexer,%s,g site/%s/%s/celery.py'%
 		(connection_name,connection_name,connection_name))	
 	bash('python site/%s/manage.py migrate'%connection_name,
 		log='logs/log-%s-migrate'%connection_name,env=True)

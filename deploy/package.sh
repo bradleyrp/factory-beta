@@ -13,5 +13,5 @@ python pack/$projname/setup.py sdist
 source env/bin/activate
 echo "[STATUS] installing package"
 echo -e "y\n" | pip uninstall $projname &> logs/log-pip-$projname 
-pip install pack/$projname/dist/$projname-0.1.tar.gz &>> logs/log-pip-$projname
+pip install pack/$projname/dist/$projname-0.1.tar.gz 1>&2 logs/log-pip-$projname
 echo "[STATUS] $projname installed"
