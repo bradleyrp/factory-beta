@@ -37,6 +37,11 @@ for coordinating the simulation queue.
    these are typically installed 
 2. Set up 
 
+OSX redis
+
+brew install redis
+ln -sfv /usr/local/opt/redis/*.plist ~/Library/LaunchAgents
+
 # REMOTE ACCESS
 
 You can view the HTML front-end over an ssh connection.

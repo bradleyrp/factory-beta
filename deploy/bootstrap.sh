@@ -29,6 +29,11 @@ else
 	if ! [[ $? -eq 0 ]]; then { echo "[ERROR] no cblas"; exit 1; }; fi
 fi
 
+echo "[STATUS] checking redis"
+redis-cli --version &> /dev/null
+if ! [[ $? == 0 ]]; then { echo "[ERROR] install redis and run \"sudo /usr/sbin/redis-server deploy/redis.conf\""; exit 1; }; fi
+echo "[STATUS] redis is ready"
+
 echo "[STATUS] setting up virtualenv"
 bash deploy/check_dependencies.sh || { exit 1; }
 virtualenv $VENV_OPTS env &> logs/log-env || { echo "[ERROR] needs python-virtualenv. see logs/log-env"; exit 1; }
@@ -37,8 +42,3 @@ pip install -r deploy/requirements.txt &> logs/log-pip || { echo "[ERROR] in pip
 perl -ne 'print "$1\n" if /^Requirement already.+\:\s*([^\s]+)/' logs/log-pip > logs/log-pip-remotes
 echo "[STATUS] see logs/log-pip-remotes for external packages"
 echo "[TIME] $SECONDS sec elapsed since starting virtualenv"
-
-echo "[STATUS] checking redis"
-redis-cli --version &> /dev/null
-if ! [[ $? == 0 ]]; then { echo "[ERROR] install redis and run \"sudo /usr/sbin/redis-server deploy/redis.conf\""; exit 1; }; fi
-echo "[STATUS] redis is ready"
