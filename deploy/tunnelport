@@ -15,6 +15,6 @@ for i in "${!ports[@]}"; do
     ps -ef | egrep "[s]sh -L\s*[0-9]+:[0-9\.]+:${starts[$i]}" | awk '{print $2}' | xargs kill
   else
     echo "[STATUS] tunneling port ${starts[$i]} from $1 to ${ports[$i]}"
-    ssh -L ${ports[$i]}:127.0.0.1:${starts[$i]} $1 -fN
+    ssh -L ${ports[$i]}:127.0.0.1:${starts[$i]} $1 -fNn > /dev/null 2>&1 &
   fi
 done
