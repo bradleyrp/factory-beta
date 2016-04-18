@@ -1,11 +1,13 @@
 from __future__ import absolute_import
 from celery import shared_task
 from .models import Simulation
-import os,subprocess
+import os,subprocess,re
 from django.conf import settings
 from .models import Simulation,Source
 from celery.utils.log import get_task_logger
 import time,re,json,glob,shutil,os
+from billiard.exceptions import Terminated
+from celery.signals import task_revoked
 
 logger = get_task_logger(__name__)
 
@@ -43,20 +45,44 @@ def detect_last(cwd):
 	except: last_step = 0
 	return last_step + 1
 
-@shared_task(track_started=True,max_retries=1,bind=True)
-def sherpa(self,program,cwd='./'):
+@shared_task(track_started=True,max_retries=1,bind=True,throws=(Terminated,))
+def sherpa(self,program,**kwargs):
 
 	"""
 	Use subprocess and celery to execute a job in the background.
+	YOU ABSOLUTELY CANNOT CHANGE THIS FILE WITHOUT RESTARTING THE WORKER !!!
 	"""
 
-	### YOU ABSOLUTELY CANNOT CHANGE THIS FILE WITHOUT RESTARTING THE WORKER !!!
-
 	#---infer the watch file
+	cwd = kwargs.get('cwd','./')
 	detect_last(cwd)
+	print "PRINTING MYSELF"
+	print self
+	print self.__dict__
 	#---concatenate to the script here
 	errorlog = 'script-s%02d-%s.log'%(detect_last(cwd),program)
 	print "[STATUS] sherpa is running a job with errors logged to %s"%errorlog
-	job = subprocess.Popen('./script-%s.py 2>> %s'%(program,errorlog),shell=True,cwd=cwd)
+	job = subprocess.Popen('./script-%s.py 2>> %s'%(program,errorlog),
+		shell=True,cwd=cwd,preexec_fn=os.setsid)
+	pid_log = os.path.join(cwd,'PID.log')
+	with open(pid_log,'w') as fp: fp.write('%d'%job.pid)
 	job.communicate()
+	if os.path.isfile(pid_log): os.remove(pid_log)
 	post_job_tasks(program,cwd=cwd+'/s%02d-%s'%(detect_last(cwd),program))
+
+
+@task_revoked.connect()
+def job_revoked(*args,**kwargs):
+
+	"""
+	Kill the job when celery revokes it.
+	"""
+
+	request = kwargs['request']
+	print '[STATUS] revoking request '+str(request)
+	cwd = request.kwargs['cwd']
+	pid_log = os.path.join(cwd,'PID.log')
+	with open(pid_log) as fp: pid = int(re.search('([0-9]+)',fp.read()).group())
+	print '[STATUS] killing PID %d and company'%pid
+	#---kill the group related to the session leader
+	os.system('pkill -TERM -g %d'%pid)

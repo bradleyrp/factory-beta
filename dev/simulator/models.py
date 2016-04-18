@@ -39,7 +39,9 @@ class Source(models.Model):
 		"""
 
 		print '[STATUS] deleting source %s'%self.name
-		shutil.rmtree(settings.DROPSPOT+'/sources/'+self.folder())
+		if not os.path.isdir(settings.DROPSPOT+'/sources/'+self.folder()):
+			print '[WARNING] that source cannot be found or deleted'
+		else: shutil.rmtree(settings.DROPSPOT+'/sources/'+self.folder())
 		print '[STATUS] done'
 		super(Source,self).delete()
 
@@ -80,7 +82,9 @@ class Simulation(models.Model):
 		"""
 
 		print '[STATUS] deleting simulation %s'%self.name
-		if re.match('^\s*$',self.code): raise Exception('blank code so cannot delete the simulation')
-		shutil.rmtree(settings.DROPSPOT+'/'+self.code)
+		#---removed exception if the code is blank and now allow deletion even if no folder
+		if re.match('^\s*$',self.code) or not os.path.isdir(settings.DROPSPOT+self.code):
+			print '[WARNING] that simulation cannot be found or deleted (code="%s")'%self.code
+		else: shutil.rmtree(settings.DROPSPOT+'/'+self.code)
 		print '[STATUS] done'
 		super(Simulation,self).delete()

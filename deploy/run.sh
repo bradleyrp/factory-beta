@@ -2,6 +2,7 @@
 
 <<'notes'
 Start the interface and worker servers in background screens.
+It is absolutely crucial that you DENY OSX the ability to listen to incoming connections.
 notes
 
 wait_grep() {
@@ -12,7 +13,7 @@ wait_grep() {
   ((++wait_seconds))
 }
 
-cat << EOF >/tmp/screenrc
+cat << EOF >$TMPDIR/screenrc
 logfile logs/log-serve
 EOF
 
@@ -26,13 +27,14 @@ source env/bin/activate
 if [[ -f logs/log-serve ]]; then rm logs/log-serve; fi
 #---open screens for the server, for the worker, and for flower
 echo "[SERVE] waiting for the servers" 
-screen -c /tmp/screenrc -d -L -S multiplexer -m python $sitespot/$projname/manage.py runserver
 sleep 3
-screen -c /tmp/screenrc -d -L -S worker_sim -m python $sitespot/$projname/manage.py celery -A $projname worker -n queue_sim -Q queue_sim --loglevel=INFO
+screen -c $TMPDIR/screenrc -d -L -S multiplexer -m python $sitespot/$projname/manage.py runserver
 sleep 3
-screen -c /tmp/screenrc -d -L -S worker_calc -m python $sitespot/$projname/manage.py celery -A $projname worker -n queue_calc -Q queue_calc --loglevel=INFO
+screen -c $TMPDIR/screenrc -d -L -S worker_sim -m python $sitespot/$projname/manage.py celery -A $projname worker -n queue_sim -Q queue_sim --loglevel=INFO
 sleep 3
-screen -c /tmp/screenrc -d -L -S flower -m python $sitespot/$projname/manage.py celery -A $projname flower
+screen -c $TMPDIR/screenrc -d -L -S worker_calc -m python $sitespot/$projname/manage.py celery -A $projname worker -n queue_calc -Q queue_calc --loglevel=INFO
+sleep 3
+screen -c $TMPDIR/screenrc -d -L -S flower -m python $sitespot/$projname/manage.py celery -A $projname flower
 wait_grep logs/log-serve http || { echo "[ERROR] no http in logs/log-serve"; exit 1; }
 address=$(sed -En 's/^Starting development server at (http.+)\//\1/p' logs/log-serve)
 echo "[SERVE] interface website @ "$(echo $address | tr -d '\r')"/simulator"
