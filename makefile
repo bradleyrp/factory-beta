@@ -59,7 +59,7 @@ env:
 	@bash deploy/bootstrap.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 
 #---erase everything and start from scratch
-nuke:
+nuke: shutdown
 	@bash deploy/nuke.sh || ( echo "[STATUS] fail";  exit 1 )
 	@/bin/echo "[STATUS] so lonely"
 	@/bin/echo "[STATUS] \"make env [system]\" to continue"
