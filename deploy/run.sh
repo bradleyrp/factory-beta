@@ -13,6 +13,7 @@ wait_grep() {
   ((++wait_seconds))
 }
 
+if [[ -z $TMPDIR ]]; then TMPDIR=/tmp; fi
 cat << EOF >$TMPDIR/screenrc
 logfile logs/log-serve
 EOF
