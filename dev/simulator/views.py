@@ -33,16 +33,16 @@ def index(request):
 		form_sources = build_sources_form()
 		if form.is_valid():
 			sim = form.save(commit=False)
-                        #---get the id before you make the rootdir
-                        sim.save()
+			#---get the id before you make the rootdir
+			sim.save()
 			#---prepare the simulation
 			print '[STATUS] cloning AUTOMACS'
 			rootdir = 'simulation-v%05d'%sim.id
-                        if os.path.isdir(rootdir): 
-                                HttpResponse('[ERROR] %s already exists so '+
-                                             'we cannot use this code to make a new simulation. '+
-                                             'you probably need to move or delete that folder. '+
-                                             'try moving to another dropspot'%rootdir)
+			if os.path.isdir(rootdir): 
+				HttpResponse('[ERROR] %s already exists so '+
+					'we cannot use this code to make a new simulation. '+
+					'you probably need to move or delete that folder. '+
+					'try moving to another dropspot'%rootdir)
 			sim.code = rootdir
 			subprocess.check_call('git clone %s %s'%(settings.AUTOMACS_UPSTREAM,rootdir),
 				shell=True,cwd=settings.DROPSPOT)
@@ -223,13 +223,12 @@ def calculation_monitor(request,debug=False):
 
 	try:	
 		dn = os.path.dirname(max(
-			glob.iglob(settings.DROPSPOT+'/simulation-v*/script-*.py'),key=os.path.getctime))
-		logs = glob.glob(os.path.join(dn,'*.log'))
-		last_log = sorted([os.path.basename(g) for g in glob.glob(dn+'/*.log')],
-			key=lambda x:int(re.findall('^script-s([0-9]+)-.+\.log$',x)[0]))[-1]
+			glob.iglob(settings.DROPSPOT+'/*/script-*.py'),key=os.path.getctime))
+		last_log = sorted([os.path.basename(g) for g in glob.glob(dn+'/script*.log')],
+			key=lambda x:int(re.findall('script-s([0-9]+)-.+\.log$',x)[0]))[-1]
 		with open(dn+'/'+last_log) as fp: lines = fp.readlines()
 		return JsonResponse({'line':lines,'running':True})
-	except: return JsonResponse({'line':'NOTHING HERE YET','running':True})
+	except: return JsonResponse({'line':'idle','running':False})
 
 def queue_monitor(request):
 
