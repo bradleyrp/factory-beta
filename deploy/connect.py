@@ -240,6 +240,12 @@ for connection_name,specs in sets.items():
 			fp.write("DATABASES['default']['NAME'] = \"%s\"\n"%os.path.abspath(specs['database']))
 		if 'lockdown' in specs: fp.write(lockdown_extra%specs['lockdown'])
 		fp.write(get_omni_dataspots)
+		#---append a lookup table for spots locations here
+		path_lookups = dict([(key,re.sub('PROJECT_NAME',connection_name,
+			abspath(os.path.join(val['route_to_data'],val['spot_directory']))))
+			for key,val in specs['spots'].items()])
+		fp.write('PATHFINDER = %s'%str(path_lookups))
+
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
 	#---replacing bash script kickstart.sh here

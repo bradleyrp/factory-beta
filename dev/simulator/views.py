@@ -11,13 +11,17 @@ from .tasks import sherpa
 import os,subprocess
 import re,glob,shutil,time
 
-#from .celery import app
+lookup_spotnames = {}
 
+"""
+note that it might be useful to monitor the queue from the main page
+the following commands might facilitate this:
+from .celery import app
 #---get the app for monitoring the queue
-#---! make ports variable please
-#import celery
-#app = celery.Celery('project',broker='redis://localhost:6379',backend='redis://localhost:6379')
-#inspector = app.control.inspect()
+import celery
+app = celery.Celery('project',broker='redis://localhost:6379',backend='redis://localhost:6379')
+inspector = app.control.inspect()
+"""
 
 def index(request):
 
@@ -37,6 +41,7 @@ def index(request):
 			sim.save()
 			#---prepare the simulation
 			print '[STATUS] cloning AUTOMACS'
+			#---! this must be changed to accomodate different naming conventions !!!
 			rootdir = 'simulation-v%05d'%sim.id
 			if os.path.isdir(rootdir): 
 				HttpResponse('[ERROR] %s already exists so '+
@@ -47,9 +52,9 @@ def index(request):
 			subprocess.check_call('git clone %s %s'%(settings.AUTOMACS_UPSTREAM,rootdir),
 				shell=True,cwd=settings.DROPSPOT)
 			subprocess.check_call('make program %s'%sim.program,
-				shell=True,cwd=settings.DROPSPOT+sim.code)
+				shell=True,cwd=find_simulation(sim.code))
 			subprocess.check_call('source %s/env/bin/activate && make docs'%settings.ROOTSPOT,
-				shell=True,cwd=settings.DROPSPOT+sim.code,executable="/bin/bash")
+				shell=True,cwd=find_simulation(sim.code),executable="/bin/bash")
 			sim.save()
 			return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
 	allsims = Simulation.objects.all().order_by('id')
@@ -120,17 +125,26 @@ def detail_source(request,id):
 def find_simulation(code):
 
 	"""
-	Utility function to check the DROPSPOT (new simulations) or the DATASPOTS (previous simulations)
-	gleaned from the omnicalc paths.py file in order to find a current simulation code.
+	Check all spots for a simulation code.
+	Check omnicalc for spotnames for each simulation and accumulate them in lookup_spotnames.
 	"""
 
-	#---! note that we have to handle old/new spots paths here!!!
-	#---! observed tab then eight-spaces in the same indent block -- need to consider adding a hook
-	path_candidates = [settings.DROPSPOT]
-	locations = [pc+'/'+code for pc in path_candidates if os.path.isdir(pc+'/'+code)]
-	assert len(locations)==1
-	location, = locations
-	return location
+	if code not in lookup_spotnames: 
+		proc = subprocess.Popen('make look',cwd=settings.CALCSPOT,
+			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,stdin=subprocess.PIPE)
+		catch = proc.communicate(
+			input="print \">>>%s\"%next(key for key,val in work.toc.items() "+
+			"if 'membrane-v666' in val)[0]\nsys.exit()\n")
+		try: 
+			regex = '^>>>([^\s]+)$'
+			selected, = [re.findall(regex,i)[0] for i in ('\n'.join(catch)).split('\n') if re.match(regex,i)]
+			print 'extracgin!'
+			print ('\n'.join(catch)).split('\n')
+			spotname = str(selected)
+			lookup_spotnames[code] = spotname
+			print '[NOTE] found %s under spotname "%s"'%(code,spotname)
+		except Exception as e: print "[ERROR] exception: %s"%e
+	return os.path.join(settings.PATHFINDER[lookup_spotnames[code]],code)
 
 def detail_simulation(request,id):
 
@@ -191,13 +205,13 @@ def detail_simulation(request,id):
 				if obj.elevate or single_pdb:
 					fns = glob.glob(settings.DROPSPOT+'/sources/'+obj.folder()+'/*')
 					for fn in fns: 
-						shutil.copyfile(fn,settings.DROPSPOT+'/'+sim.code+'/inputs/'+os.path.basename(fn))
+						shutil.copyfile(fn,find_simulation(sim.code)+'/inputs/'+os.path.basename(fn))
 					additional_files.append(os.path.basename(fn))
 				#---if the source is not elevated we copy its folder into inputs
 				#---note downstream codes need a source, they must refer to it by underscored name
 				else:
 					shutil.copytree(settings.DROPSPOT+'/sources/'+obj.folder(),
-						settings.DROPSPOT+'/'+sim.code+'/inputs/'+obj.folder())
+						find_simulation(sim.code)+'/inputs/'+obj.folder())
 					additional_sources.append(obj.folder())
 		if additional_sources != []: 
 			settings_dict['sources'] = str(additional_sources)
