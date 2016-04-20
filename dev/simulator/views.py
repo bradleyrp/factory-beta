@@ -133,13 +133,10 @@ def find_simulation(code):
 		proc = subprocess.Popen('make look',cwd=settings.CALCSPOT,
 			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,stdin=subprocess.PIPE)
 		catch = proc.communicate(
-			input="print \">>>%s\"%next(key for key,val in work.toc.items() "+
-			"if 'membrane-v666' in val)[0]\nsys.exit()\n")
+			input="print '>>>'+work.spotname_lookup('%s')\nsys.exit()\n'"%str(code))
 		try: 
 			regex = '^>>>([^\s]+)$'
 			selected, = [re.findall(regex,i)[0] for i in ('\n'.join(catch)).split('\n') if re.match(regex,i)]
-			print 'extracgin!'
-			print ('\n'.join(catch)).split('\n')
 			spotname = str(selected)
 			lookup_spotnames[code] = spotname
 			print '[NOTE] found %s under spotname "%s"'%(code,spotname)
