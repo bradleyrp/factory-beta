@@ -332,7 +332,7 @@ for connection_name,specs in sets.items():
 		(specs['site'],connection_name,specs['calc']),shell=True,executable='/bin/bash')
 
 	#---write the paths.yaml for the new omnicalc with the correct spots, paths, etc
-	with open(os.path.join(specs['calc'],'paths.yaml')) as fp: default_paths = yaml.load(fp.read())
+	default_paths = {}
 	default_paths['post_data_spot'] = settings_paths['postspot']
 	default_paths['post_plot_spot'] = settings_paths['plotspot']
 	default_paths['workspace_spot'] = abspath(specs['workspace_spot'])
