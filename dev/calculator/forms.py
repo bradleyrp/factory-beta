@@ -95,7 +95,7 @@ class calculation_form(forms.ModelForm):
 
 		#---detect calculation names from scripts in the calcs folder
 		regex_valid_calculation = '^(?!(?:plot|pipeline)-)(.+)\.py$'
-		fns = [os.path.basename(fn) for fn in glob.glob('calc/proteins/calcs/*.py')]
+		fns = [os.path.basename(fn) for fn in glob.glob(settings.CALCSPOT+'/calcs/*.py')]
 		valid_calcnames = [(i,i) for i in [re.findall(regex_valid_calculation,fn)[0] 
 			for fn in fns if re.match(regex_valid_calculation,fn)]]
 		self.fields['name'] = forms.ChoiceField(required=True,choices=valid_calcnames)
