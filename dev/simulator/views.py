@@ -52,9 +52,9 @@ def index(request):
 			subprocess.check_call('git clone %s %s'%(settings.AUTOMACS_UPSTREAM,rootdir),
 				shell=True,cwd=settings.DROPSPOT)
 			subprocess.check_call('make program %s'%sim.program,
-				shell=True,cwd=find_simulation(sim.code))
+				shell=True,cwd=os.path.join(settings.DROPSPOT,sim.code))
 			subprocess.check_call('source %s/env/bin/activate && make docs'%settings.ROOTSPOT,
-				shell=True,cwd=find_simulation(sim.code),executable="/bin/bash")
+				shell=True,cwd=os.path.join(settings.DROPSPOT,sim.code),executable="/bin/bash")
 			sim.save()
 			return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
 	allsims = Simulation.objects.all().order_by('id')
@@ -140,8 +140,11 @@ def find_simulation(code):
 			spotname = str(selected)
 			lookup_spotnames[code] = spotname
 			print '[NOTE] found %s under spotname "%s"'%(code,spotname)
-		except Exception as e: print "[ERROR] exception: %s"%e
-	return os.path.join(settings.PATHFINDER[lookup_spotnames[code]],code)
+		except Exception as e: 
+			print ('[WARNING] failed to find "%s" in omnicalc so perhaps it is new '+
+				'returning dropspot+code'%code)
+			return os.path.join(settings.DROPSPOT,code)
+		return os.path.join(settings.PATHFINDER[lookup_spotnames[code]],code)
 
 def detail_simulation(request,id):
 
