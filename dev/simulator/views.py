@@ -140,9 +140,9 @@ def find_simulation(code):
 			spotname = str(selected)
 			lookup_spotnames[code] = spotname
 			print '[NOTE] found %s under spotname "%s"'%(code,spotname)
-		except Exception as e: 
-			print ('[WARNING] failed to find "%s" in omnicalc so perhaps it is new '+
-				'returning dropspot+code'%code)
+		except Exception as e:
+			print '[WARNING] failed to find "%s" in omnicalc so perhaps'%code
+                        print  'it is new returning dropspot+code'
 			return os.path.join(settings.DROPSPOT,code)
 		return os.path.join(settings.PATHFINDER[lookup_spotnames[code]],code)
 
