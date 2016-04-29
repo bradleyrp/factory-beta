@@ -20,6 +20,21 @@ EOF
 
 projname=$1
 sitespot="site/"
+
+DEVPORT=$(source env/bin/activate && python -c \
+"__file__='$sitespot/$projname/$projname/settings.py';
+execfile(__file__);print DEVPORT if 'DEVPORT' in globals() else ''" \
+&& deactivate)
+if [[ -z $DEVPORT ]]; then 
+DEVPORT=8000
+CELERYPORT=5555
+else
+CELERYPORT=$(($DEVPORT+1))
+fi
+
+echo "[SERVE] serving the factory to $DEVPORT"
+echo "[SERVE] serving celery at $CELERYPORT"
+
 #---previously used the projects.txt file to get the last project
 if [ -z $projname ]; then { echo "[USAGE] make run <project_name>"; exit; }; fi
 if [ "$projname" == "dev" ]; then { sitespot="./"; } fi
@@ -29,16 +44,22 @@ if [[ -f logs/log-serve ]]; then rm logs/log-serve; fi
 #---open screens for the server, for the worker, and for flower
 echo "[SERVE] waiting for the servers" 
 sleep 3
-screen -c $TMPDIR/screenrc -d -L -S multiplexer -m python $sitespot/$projname/manage.py runserver
+screen -c $TMPDIR/screenrc -d -L -S $projname.multiplexer \
+-m python $sitespot/$projname/manage.py runserver 0.0.0.0:$DEVPORT
 sleep 3
-screen -c $TMPDIR/screenrc -d -L -S worker_sim -m python $sitespot/$projname/manage.py celery -A $projname worker -n queue_sim -Q queue_sim --loglevel=INFO
+screen -c $TMPDIR/screenrc -d -L -S $projname.worker_sim \
+-m python $sitespot/$projname/manage.py celery -A $projname worker \
+-n queue_sim -Q queue_sim --loglevel=INFO
 sleep 3
-screen -c $TMPDIR/screenrc -d -L -S worker_calc -m python $sitespot/$projname/manage.py celery -A $projname worker -n queue_calc -Q queue_calc --loglevel=INFO
+screen -c $TMPDIR/screenrc -d -L -S $projname.worker_calc \
+-m python $sitespot/$projname/manage.py celery -A $projname worker \
+-n queue_calc -Q queue_calc --loglevel=INFO 
 sleep 3
-screen -c $TMPDIR/screenrc -d -L -S flower -m python $sitespot/$projname/manage.py celery -A $projname flower
+screen -c $TMPDIR/screenrc -d -L -S $projname.flower \
+-m python $sitespot/$projname/manage.py celery -A $projname --port=$CELERYPORT flower
 wait_grep logs/log-serve http || { echo "[ERROR] no http in logs/log-serve"; exit 1; }
 address=$(sed -En 's/^Starting development server at (http.+)\//\1/p' logs/log-serve)
 echo "[SERVE] interface website @ "$(echo $address | tr -d '\r')"/simulator"
-wait_grep logs/log-serve 5555 || { echo "[ERROR] no 5555 in logs/log-serve"; exit 1; }
+wait_grep logs/log-serve $CELERYPORT || { echo "[ERROR] no $CELERYPORT in logs/log-serve"; exit 1; }
 flower=$(sed -En 's/^.+Visit me at (http.+)/\1/p' logs/log-serve)
 echo "[SERVE] flower monitor @ "$(echo $flower | tr -d '\r')

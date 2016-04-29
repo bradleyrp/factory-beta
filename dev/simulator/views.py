@@ -63,6 +63,7 @@ def index(request):
 	return render(request,'simulator/index%s.html'%modifier,{
 		'form_simulation':form,'allsims':allsims,
 		'form_sources':form_sources,'allsources':allsources,
+		'CELERYPORT':settings.CELERYPORT,
 		})
 		
 def upload_sources(request):

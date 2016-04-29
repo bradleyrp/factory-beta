@@ -5,16 +5,17 @@ use this script to tunnel ssh connections
 note that without an SSH key you will have to enter passwords for each port
 notes
 
-starts=(8000 5555)
 if [ -z $1 ]; then echo "[USAGE] tunnelport alias|end [port]"; exit 1; fi
 if [ -z $2 ]; then ports=(8000 5555) 
 else ports=($2 $(($2+1))); fi
+if [ -z $3 ]; then starts=(8000 5555)
+else starts=($3 $(($3+1))); fi
 for i in "${!ports[@]}"; do
   if [ $1 = "end" ]; then
   	echo "[STATUS] ending ALL tunnels from ${starts[$i]}"
     ps -ef | egrep "[s]sh -L\s*[0-9]+:[0-9\.]+:${starts[$i]}" | awk '{print $2}' | xargs kill
   else
     echo "[STATUS] tunneling port ${starts[$i]} from $1 to ${ports[$i]}"
-    ssh -L ${ports[$i]}:127.0.0.1:${starts[$i]} $1 -fNn > /dev/null 2>&1 &
+    ssh -L ${ports[$i]}:127.0.0.1:${starts[$i]} $1 -fN
   fi
 done

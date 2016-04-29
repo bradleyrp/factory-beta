@@ -152,7 +152,7 @@ def prepare_vhosts(rootdir,connection_name,port=None,dev=True):
 		rootdir)
 	return conf
 
-def abspath(path): return os.path.join(os.path.expanduser(os.path.abspath(path)),'')
+def abspath(path): return os.path.join(os.path.abspath(os.path.expanduser(path)),'')
 
 def mkdir_or_report(dn):
 
@@ -244,7 +244,9 @@ for connection_name,specs in sets.items():
 		path_lookups = dict([(key,re.sub('PROJECT_NAME',connection_name,
 			abspath(os.path.join(val['route_to_data'],val['spot_directory']))))
 			for key,val in specs['spots'].items()])
-		fp.write('PATHFINDER = %s'%str(path_lookups))
+		fp.write('PATHFINDER = %s\n'%str(path_lookups))
+		#---if port is in the specs we serve the development server on that port and celery on the next
+		if 'port' in specs: fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(specs['port'],specs['port']+1))
 
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
@@ -298,7 +300,7 @@ for connection_name,specs in sets.items():
 	#	if os.path.isdir(dn): shutil.rmtree(dn)
 
 	#---if the repo points nowhere we prepare a calcs folder for omnicalc (repo is required)
-	new_calcs_repo = not (os.path.isdir(specs['repo']) and (
+	new_calcs_repo = not (os.path.isdir(abspath(specs['repo'])) and (
 		os.path.isdir(specs['repo']+'/.git') or os.path.isfile(specs['repo']+'/HEAD')))
 	if new_calcs_repo:
 		print "[STATUS] repo path %s does not exist so we are making a new one"%specs['repo']
@@ -308,6 +310,12 @@ for connection_name,specs in sets.items():
 	#---if the repo is a viable git repo then we clone it
 	else: 
 		if not specs['repo']==specs['calc']+'/calcs':
+			#---remove the "blank" calcs folders if they appear to be blank before cloning
+			#---! note that it would be far better to simply require any user preserve their code with a git
+			if set([i for j in [fn 
+				for root,dn,fn in os.walk('calc/%s/calcs'%connection_name)] 
+				for i in j])==set(['.info','__init__.py']):
+				shutil.rmtree(specs['calc']+'/calcs')
 			try: bash('git clone '+specs['repo']+' '+specs['calc']+'/calcs',cwd='./',
 				log='logs/log-%s-clone-calcs-repo'%connection_name)
 			except:

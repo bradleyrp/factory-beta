@@ -32,13 +32,13 @@ def collect_images():
 	Collect the names of all images in the plot directory and read their metadata.
 	"""
 
-	#omni_paths = {}
-	#execfile(os.path.join(settings.ROOTSPOT,settings.CALCSPOT,'paths.py'),omni_paths)
 	image_fns = [os.path.basename(fn) for fn in glob.glob(settings.PLOTSPOT+'/*.png')]
+	print image_fns
 	names_path_meta = [(
 		re.sub('_',' ',re.findall('^fig\.([^\.]+)\.',fn)[0]),fn,
 		eval(Image.open(settings.PLOTSPOT+'/'+fn).info['meta']) 
-			if 'meta' in Image.open(settings.PLOTSPOT+'/'+fn).info else {}) for fn in image_fns]
+		if 'meta' in Image.open(settings.PLOTSPOT+'/'+fn).info else {}) for fn in image_fns
+		if re.match('^fig\.([^\.]+)\.',fn)]
 	image_fns_gif = [(os.path.basename(fn),os.path.basename(fn),{}) 
 		for fn in glob.glob(settings.PLOTSPOT+'/*.gif')]
 	return names_path_meta+image_fns_gif
@@ -197,6 +197,7 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 		'calculation_form':form_calculation,
 		'slice_form_doc':form_slice.__doc__,
 		'code_fns':code_fns,
+		'CELERYPORT':settings.CELERYPORT,
 		}
 	modifier = ['','_original'][0]
 	rendered = render_to_string('calculator/index%s.html'%modifier,outgoing)

@@ -3,7 +3,7 @@
 
 #---filter and evaluate
 -include banner
-VALID_TARGETS := banner run shutdown shell kickstart package bootstrap reset connect nuke help env
+VALID_TARGETS := banner run shutdown shell kickstart package bootstrap reset connect nuke help env sprint scope
 RUN_ARGS_UNFILTER := $(wordlist 1,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 RUN_ARGS := $(filter-out $(VALID_TARGETS),$(RUN_ARGS_UNFILTER))
 $(eval $(RUN_ARGS):;@:)
@@ -30,13 +30,18 @@ run: shutdown
 	@bash deploy/run.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 	@/bin/echo "[STATUS] see deploy/tunnelport to view the site over ssh"
 
+#---start a server and detach the screen
+sprint:
+	@bash deploy/run.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
+	@/bin/echo "[STATUS] see deploy/tunnelport to view the site over ssh"
+
 #---refresh connections via descriptions in a yaml file
 connect: shutdown
 	@./deploy/connect.py ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 
 #---reattach the screen running the server
 shutdown:
-	@bash deploy/shutdown.sh  || ( echo "[STATUS] fail" &&  exit 1 )
+	@bash deploy/shutdown.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 
 #---activate the virtualenvironment and run the shell
 shell: 
@@ -57,6 +62,9 @@ depack:
 #---delete and recreate the virtualenv
 env:
 	@bash deploy/bootstrap.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
+
+scope:
+	@screen -ls || exit 0;
 
 #---erase everything and start from scratch
 nuke: shutdown

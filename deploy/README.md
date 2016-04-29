@@ -17,6 +17,7 @@ or higher, you must also have the following software available.
 We have listed common package names for RPM and DEB systems 
 below.
 
+0. Basic software like "screen", a text editor, etc.
 1. "Git" for version control. Many internal parts of the code
    rely on this program for keeping track of your codes.
 2. Python virtual environment. The packages are named 
@@ -30,7 +31,8 @@ below.
    packages installed system-wide. Packages are named 
    "python-numpy-devel" on RPM systems. Simply installing 
    "numpy" and "scipy" on DEB and homebrew should be 
-   sufficient.
+   sufficient. We also recommend installing matplotlib via
+   the packagemanager because "pip" often fails at this.
 5. The hdf5 package for writing binary files. On DEB we 
    recommend installing "libhdf5", "libhdf5-dev", and 
    "python-h5py". These packages are named "hdf5", and 
