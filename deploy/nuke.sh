@@ -37,7 +37,7 @@ previous codes
 notes
 
 #---no enter if you use the -n 1 flag below
-read -p "[QUESTION] \"nuke\" starts entirely from scratch. continue (y/N)? " -r
+read -p "[QUESTION] \"nuke\" starts from scratch. it deletes data in this folder. continue (y/N)? " -r
 if [[ $REPLY =~ ^[Yy]$ ]]; then echo "[STATUS] nuking"
 else exit 1; fi
 
