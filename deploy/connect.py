@@ -247,6 +247,7 @@ for connection_name,specs in sets.items():
 		fp.write('PATHFINDER = %s\n'%str(path_lookups))
 		#---if port is in the specs we serve the development server on that port and celery on the next
 		if 'port' in specs: fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(specs['port'],specs['port']+1))
+		else: fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(8000,5555))
 
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
