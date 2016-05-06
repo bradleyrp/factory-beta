@@ -38,7 +38,8 @@ for snum,sn in enumerate(data):
 	ts -= ts.min()
 	#---convert to ns
 	ts = ts/1000.
-	ax.plot(ts,rmsds,label=work.meta[sn]['name'],lw=2,color=color)
+        name=' '.join(work.meta[sn]['name'].split('_'))
+	ax.plot(ts,rmsds,label=name,lw=2,color=color)
 	ax.set_xlabel(r'time (ns)')
 	#---histograms
 	ax = axes[1]
@@ -52,12 +53,14 @@ for snum,sn in enumerate(data):
 	#---drift arrows
 	ax.arrow(counter,drift_start,0,drift,
 		head_width=max(counts)*0.1,head_length=max_rmsd*0.05,fc=color,ec='w',lw=1.5,
-		path_effects=[path_effects.Stroke(linewidth=4,foreground=color),path_effects.Normal()],zorder=3)
+		path_effects=[path_effects.Stroke(linewidth=4,foreground=color),
+                              path_effects.Normal()],zorder=3)
 	xpos.append(counter)
 	counter += max(counts)*1.1
 	if snum == 0: xlim_left = -1*max(counts)*0.1
 ax.set_xticks(xpos)
-ax.set_xticklabels([work.meta[sn]['name'] for sn in data],rotation=45,ha='right')
+ax.set_xticklabels([' '.join(work.meta[sn]['name'].split('_')) for sn in data],rotation=45,
+                   ha='right')
 ax.set_xlim(xlim_left,counter)
 for ax in axes: 
 	ax.set_ylim(0,max_rmsd*1.1)
