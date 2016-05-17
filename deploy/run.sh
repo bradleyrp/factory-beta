@@ -27,7 +27,7 @@ execfile(__file__);print DEVPORT if 'DEVPORT' in globals() else ''" \
 && deactivate)
 if [[ -z $DEVPORT ]]; then 
 DEVPORT=8000
-CELERYPORT=5555
+CELERYPORT=8001
 else
 CELERYPORT=$(($DEVPORT+1))
 fi
