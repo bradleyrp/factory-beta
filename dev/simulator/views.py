@@ -375,7 +375,7 @@ def detail_simulation(request,id):
 			sherpa.apply_async(args=(sim.program,),kwargs=kwargs,retry=False)
 		#---old-school background runner uses a simpler method
 		elif settings.BACKRUN == 'old':
-			
+			raise Exception('not yet implemented')	
 		else: raise
 		sim.started = True
 		sim.save()
