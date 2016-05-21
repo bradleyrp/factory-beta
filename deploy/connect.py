@@ -45,31 +45,39 @@ from django.conf.urls.static import static
 urlpatterns += static('/write/',document_root='/home/localshare/analysis/mplxr/write/')
 """
 
-setings_additions = """
+settings_additions_celery = """
 #---automatically added from kickstart
 INSTALLED_APPS = tuple(list(INSTALLED_APPS)+['simulator','calculator','djcelery'])
 
 #---celery worker and routing settings
-import djcelery
-from kombu import Exchange,Queue
-djcelery.setup_loader()
-BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_ACKS_LATE = False
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERYD_CONCURRENCY = 1
-CELERY_QUEUES = (
-    Queue('queue_sim',Exchange('queue_sim'),routing_key='queue_sim'),
-    Queue('queue_calc',Exchange('queue_calc'),routing_key='queue_calc'),
-    )
-CELERY_ROUTES = {
-    'simulator.tasks.sherpa':{'queue':'queue_sim','routing_key':'queue_sim'},
-    'calculator.tasks.sherpacalc':{'queue':'queue_calc','routing_key':'queue_calc'},
-    }
+try:
+    import djcelery
+    from kombu import Exchange,Queue
+    djcelery.setup_loader()
+    BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+    CELERY_ACKS_LATE = False
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERYD_CONCURRENCY = 1
+    CELERY_QUEUES = (
+        Queue('queue_sim',Exchange('queue_sim'),routing_key='queue_sim'),
+        Queue('queue_calc',Exchange('queue_calc'),routing_key='queue_calc'),
+        )
+    CELERY_ROUTES = {
+        'simulator.tasks.sherpa':{'queue':'queue_sim','routing_key':'queue_sim'},
+        'calculator.tasks.sherpacalc':{'queue':'queue_calc','routing_key':'queue_calc'},
+        }
+#---sometimes we probe settings.py without executing
+except: pass
 
 #---PATHS
+"""
+
+settings_additions_old = """
+#---automatically added from kickstart
+INSTALLED_APPS = tuple(list(INSTALLED_APPS)+['simulator','calculator'])
 """
 
 lockdown_extra = """
@@ -223,6 +231,12 @@ for connection_name,specs in sets.items():
 		'calcspot':specs['calc'],
 		}
 
+	#---set the BACKRUN flag for the type of computation cluster
+	backrun = 'celery' if not 'backrun' in specs else specs['backrun']
+	if backrun=='celery': settings_additions = settings_additions_celery
+	elif backrun=='old': settings_additions = settings_additions_old
+	else: raise
+
 	#---prepare additions to the settings.py and urls.py
 	settings_append_fn = 'logs/setup-%s-settings-append.py'%connection_name
 	urls_append_fn = 'logs/setup-%s-urls-append.py'%connection_name
@@ -230,7 +244,8 @@ for connection_name,specs in sets.items():
 		if 'development' in specs and specs['development']: 
 			devpath = "import sys;sys.path.insert(0,os.getcwd()+'/dev/')" 
 		else: devpath = ""
-		fp.write(devpath+setings_additions)
+		fp.write(devpath+settings_additions)
+		fp.write('\n#---run in the background the old-fashioned way\nBACKRUN = "%s"\n'%backrun)
 		for key,val in settings_paths.items():
 			fp.write('%s = "%s"\n'%(key.upper(),val))
 		for key in ['PLOTSPOT','POSTSPOT','ROOTSPOT']: 
@@ -246,8 +261,9 @@ for connection_name,specs in sets.items():
 			for key,val in specs['spots'].items()])
 		fp.write('PATHFINDER = %s\n'%str(path_lookups))
 		#---if port is in the specs we serve the development server on that port and celery on the next
-		if 'port' in specs: fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(specs['port'],specs['port']+1))
-		else: fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(8000,5555))
+		if 'port' in specs and backrun=='celery': 
+			fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(specs['port'],specs['port']+1))
+			elif backrun=='celery': fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(8000,8001))
 
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
@@ -275,11 +291,11 @@ for connection_name,specs in sets.items():
 	for dn in ['calc/%s/calcs'%connection_name,'calc/%s/calcs/scripts'%connection_name]: 
 		if not os.path.isdir(dn): os.mkdir(dn)
 	bash('make docs',cwd='calc/%s'%connection_name,log='logs/log-%s-omnicalc-docs'%connection_name,env=True)
-	shutil.copy('deploy/celery_source.py','site/%s/%s/celery.py'%(connection_name,connection_name))
-	#---BSD/OSX sed does not do in-place replacements
-	"perl -pi -e s,multiplexer,project,g site/project/project/celery.py"
-	bash('perl -pi -e s,multiplexer,%s,g site/%s/%s/celery.py'%
-		(connection_name,connection_name,connection_name))	
+	if backrun == 'celery':
+		shutil.copy('deploy/celery_source.py','site/%s/%s/celery.py'%(connection_name,connection_name))
+		#---BSD/OSX sed does not do in-place replacements
+		bash('perl -pi -e s,multiplexer,%s,g site/%s/%s/celery.py'%
+			(connection_name,connection_name,connection_name))	
 	bash('python site/%s/manage.py migrate'%connection_name,
 		log='logs/log-%s-migrate'%connection_name,env=True)
 	if make_superuser:

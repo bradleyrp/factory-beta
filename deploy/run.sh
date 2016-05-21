@@ -2,8 +2,30 @@
 
 <<'notes'
 Start the interface and worker servers in background screens.
-It is absolutely crucial that you DENY OSX the ability to listen to incoming connections.
+It is generally important you DENY OSX the ability to listen to incoming connections.
+Old-school backround job-running is under development here.
 notes
+
+#---get settings
+projname=$1
+sitespot="site/"
+if [[ ! -d "$sitespot/$projname" ]]; then { echo "[ERROR] no project \"$sitespot/$projname\"" && exit 1; }; fi
+backrun=$(python -c \
+"__file__='$sitespot/$projname/$projname/settings.py';\
+execfile(__file__);print BACKRUN")
+DEVPORT=$(source env/bin/activate && python -c \
+"__file__='$sitespot/$projname/$projname/settings.py';
+execfile(__file__);print DEVPORT if 'DEVPORT' in globals() else ''" \
+&& deactivate)
+if [[ -z $DEVPORT ]]; then 
+DEVPORT=8000
+CELERYPORT=8001
+else
+CELERYPORT=$(($DEVPORT+1))
+fi
+
+#---blank backrun defaults to the celery method
+if [[ -z $backrun ]]; then 
 
 wait_grep() {
   local file="$1"; shift
@@ -17,20 +39,6 @@ if [[ -z $TMPDIR ]]; then TMPDIR=/tmp; fi
 cat << EOF >$TMPDIR/screenrc
 logfile logs/log-serve
 EOF
-
-projname=$1
-sitespot="site/"
-
-DEVPORT=$(source env/bin/activate && python -c \
-"__file__='$sitespot/$projname/$projname/settings.py';
-execfile(__file__);print DEVPORT if 'DEVPORT' in globals() else ''" \
-&& deactivate)
-if [[ -z $DEVPORT ]]; then 
-DEVPORT=8000
-CELERYPORT=8001
-else
-CELERYPORT=$(($DEVPORT+1))
-fi
 
 echo "[SERVE] serving the factory to $DEVPORT"
 echo "[SERVE] serving celery at $CELERYPORT"
@@ -63,3 +71,17 @@ echo "[SERVE] interface website @ "$(echo $address | tr -d '\r')"/simulator"
 wait_grep logs/log-serve $CELERYPORT || { echo "[ERROR] no $CELERYPORT in logs/log-serve"; exit 1; }
 flower=$(sed -En 's/^.+Visit me at (http.+)/\1/p' logs/log-serve)
 echo "[SERVE] flower monitor @ "$(echo $flower | tr -d '\r')
+
+#---old-school method
+elif [[ "$backrun" == "old" ]]; then 
+
+#---use the backrun utility to start this job in the background
+./deploy/backrun.py \
+name="devserver-$projname" \
+log="logs/log-serve" \
+pre="source env/bin/activate" \
+command="python $sitespot/$projname/manage.py runserver 0.0.0.0:$DEVPORT"
+
+else { echo "[ERROR] unclear backrun" && exit 1; }; fi
+
+

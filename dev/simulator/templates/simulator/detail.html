@@ -2,37 +2,75 @@
 {% block content %}
 {% load code_syntax %}
 
+<div id="freewall" class="free-wall" style="padding:10px;">
+
 <div class="brick" style="text-align:center;">
 <div class="inbrick">
 {% include "simulator/tile_main.html" %}
 </div></div>
 
-<div style="clear:both;"></div>
+{% if fieldsets %}
+
+<form action="sim{{ sim.id }}" method="post" enctype="multipart/form-data">
+{% csrf_token %}
+<div class="brick">
+<div class="inbrick">
+<h2>simulation: {{ sim.name }}</h2>
+<input type="submit" value="start" style="width:100"/><p>
+<code><p>
+program: {{ sim.program }}<br>
+location: {{ path }}
+</p></code>
+</div></div>
+
+{% for set in fieldsets %}
+
+<div class="brick" >
+<div class="inbrick">
+<table style="width:100%;">
+<thead><tr><th style="text-align:right;"></th><th style="text-align:left;"></th></tr></thead>
+<tbody>
+<tr><legend><h3>{{ set.legend }}</h3></legend></tr>
+{% for field in set %}
+<tr><td style="text-align:right;">{{ field.label }}</td><td>{{ field }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div></div>
+{% endfor %}
+</form>
+
+{% else %}
+
+<div class="brick">
+<div class="inbrick">
 <h2>simulation: {{ sim.name }}</h2>
 <code><p>
 program: {{ sim.program }}<br>
 location: {{ path }}
 </p></code>
-{% if form %}
-<form action="sim{{ sim.id }}" method="post" enctype="multipart/form-data">
-<table style="text-align:left">
-<colgroup>
-<col style="text-align:right">
-<col style="width:300">
-</colgroup>  
+</div></div>
+
+<div class="brick" style="text-align:center;">
+<div class="inbrick">
+<table style="width:100%;">
+<thead><tr><th style="text-align:right;"></th><th style="text-align:left;"></th></tr></thead>
 <tbody>
-{% csrf_token %}
-<br>
-<tr><td></td><td><input type="submit" value="start" style="width:100"/></td></tr>
-{{ form.as_table }}
+<tr><legend><h3>{{ set.legend }}</h3></legend></tr>
+{% for named,fix in settings %}
+<tr><td style="text-align:right;"><strong>{{ named }}</strong></td></tr>
+{% for key,val in fix %}
+<tr><td style="text-align:right;">{{ key }}</td><td>{{ val }}</td></tr>
+{% endfor %}
+{% endfor %}
 </tbody>
 </table>
-</form>
-{% else %}
-<strong>settings code</strong>
-{{ settings_text|highlight|safe }}
+
+</div></div>
+
 {% endif %}
 
-</div>
 
 {% endblock %}
+
+</div>

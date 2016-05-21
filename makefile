@@ -63,8 +63,15 @@ depack:
 env:
 	@bash deploy/bootstrap.sh ${RUN_ARGS} || ( echo "[STATUS] fail" &&  exit 1 )
 
+#---monitor background devserver/workers
 scope:
+	@/bin/echo "[STATUS] checking for background jobs"
+	@/bin/echo "[STATUS] first, we look at the screens (if you are using celery)"
 	@screen -ls || exit 0;
+	@/bin/echo "[STATUS] second, we check for background devservers"
+	@ls *script-stop*
+	@/bin/echo "[STATUS] you can stop these processes with \"make shutdown\""
+
 
 #---erase everything and start from scratch
 nuke: shutdown

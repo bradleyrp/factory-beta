@@ -20,15 +20,15 @@ import shutil
 import subprocess
 
 ###---SETTINGS
-nsims = 10
+nsims = [0,10][0]
+test = 'trialanine'
 project_name = 'project'
 rootdir = os.path.abspath(os.getcwd())
 djpath = os.path.join(rootdir,'site',project_name)
 simspath = os.path.join(rootdir,'data',project_name,'sims')
-sources = {
-	'villin':os.path.join(rootdir,'CELL/3trw_nosol.pdb'),
-	'martini.ff':os.path.join(rootdir,'CELL/martini.ff'),
-	}
+sources = {'villin':os.path.join(rootdir,'CELL/3trw_nosol.pdb')}
+bundles = {'trialanine':{'path':'~/worker/factory/amx-module-test-3ala','metarun':'3ala',
+	'program':'trialanine > metarun_test_3ala.py'}}
 
 #---imports from django
 sys.path.insert(0,djpath)
@@ -37,7 +37,8 @@ import django
 django.setup()
 import simulator
 from django.conf import settings
-from simulator.views import prepare_simulation,prepare_source,find_simulation,simulation_script
+from simulator.views import prepare_simulation,prepare_source
+from simulator.views import find_simulation,simulation_script,get_bundle,is_bundle
 from simulator.tasks import sherpa
 
 def upload_source(name,fn):
@@ -53,23 +54,45 @@ def upload_source(name,fn):
 	raise Exception('failed to upload %s,%s'%(name,fn))
 
 #---make sources
-for name,source in sources.items():
-	try: upload_source(name,source)
-	except: print '[STATUS] source %s exists'%name
-	obj,created = simulator.models.Source.objects.get_or_create(name='villin')
-	if not created: 
-		print '[STATUS] making source %s'%name
-		obj.save()
+if test in sources:
+	for name,source in sources.items():
+		try: upload_source(name,source)
+		except: print '[STATUS] source %s exists'%name
+		obj,created = simulator.models.Source.objects.get_or_create(name='villin')
+		if not created: 
+			print '[STATUS] making source %s'%name
+			obj.save()
+
+#---make bundles
+if test in bundles:
+	for name,details in bundles.items():
+		obj,created = simulator.models.Bundle.objects.get_or_create(name=name,path=details['path'])
+		if not created: 
+			print '[STATUS] making bundle %s'%name
+			obj.save()
 
 #---run a gillion simulations maybe?
 for num in range(nsims):
-	print '[STATUS] preparing simulation %d/%d'%(num,nsims)
-	source = simulator.models.Source.objects.get(name='villin')
-	sim,created = simulator.models.Simulation.objects.get_or_create(name='villin rp%d'%num)
-	prepare_simulation(sim)
-	#---mimic simulator.views
-	location = find_simulation(sim.code)
-	simscript = location+'/script-%s.py'%sim.program
-	scriptset = simulation_script(simscript)
-	prepare_source(source,sim,settings_dict=scriptset['dict'])
-	sherpa.apply_async(args=(sim.program,),kwargs={'cwd':location},retry=False)
+	if test=='villin':
+		print '[STATUS] preparing simulation %d/%d'%(num,nsims)
+		source = simulator.models.Source.objects.get(name=test)
+		sim,created = simulator.models.Simulation.objects.get_or_create(name='%s rp%d'%(test,num))
+		prepare_simulation(sim)
+		#---mimic simulator.views
+		location = find_simulation(sim.code)
+		simscript = location+'/script-%s.py'%sim.program
+		scriptset = simulation_script(simscript)
+		prepare_source(source,sim,settings_dict=scriptset['dict'])
+		sherpa.apply_async(args=(sim.program,),kwargs={'cwd':location},retry=False)
+	elif test=='trialanine':
+		print '[STATUS] preparing simulation %d/%d'%(num,nsims)
+		bundle = simulator.models.Bundle.objects.get(name=test)
+		sim,created = simulator.models.Simulation.objects.get_or_create(name='%s rp%d'%(test,num),
+			program=bundles[test]['program'])
+		prepare_simulation(sim)
+		get_bundle(bundle.id,sim.code)
+		bundle_info = is_bundle(sim.program)
+		location = find_simulation(sim.code)
+		sherpa.apply_async(args=(sim.program,),kwargs={'cwd':location,
+			'metarun':bundle_info[1]},retry=False)
+	else: raise

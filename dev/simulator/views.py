@@ -7,12 +7,38 @@ from django.contrib.staticfiles.views import serve
 from django.http import JsonResponse
 from .forms import *
 from .models import *
-from .tasks import sherpa
+if settings.BACKRUN == '':
+	from .tasks import sherpa
 import os,subprocess
 import re,glob,shutil,time
 
-#---maintain a list of possible (upstream) data spot locations
+#---fieldsets to organize the parts of a form
+from django.forms.forms import BoundField
+class FieldSet(object):
+    def __init__(self,form,fields,legend='',cls=None):
+        self.form = form
+        self.legend = legend
+        self.fields = fields
+        self.cls = cls
+    def __iter__(self):
+        for name in self.fields:
+            field = self.form.fields[name]
+            yield BoundField(self.form, field, name)
+
+#---maintain a list of possible (upstream) data spot locations for fast lookups
 lookup_spotnames = {}
+
+#---some functions require absolute paths
+def path_expander(x): return os.path.abspath(os.path.expanduser(x))
+
+def is_bundle(name): 
+
+	"""
+	Convert a bundle "name" composed of the name and metarun name into parts.
+	"""
+
+	if re.match('^(.+)\s>\s(.+)$',name): return re.findall('^(.+)\s>\s(.+)$',name)[0]
+	else: return False
 
 def prepare_simulation(sim):
 
@@ -30,10 +56,15 @@ def prepare_simulation(sim):
 	sim.code = rootdir
 	subprocess.check_call('git clone %s %s'%(settings.AUTOMACS_UPSTREAM,rootdir),
 		shell=True,cwd=settings.DROPSPOT)
-	subprocess.check_call('make program %s'%sim.program,
-		shell=True,cwd=os.path.join(settings.DROPSPOT,sim.code),executable="/bin/bash")
 	subprocess.check_call('source %s/env/bin/activate && make docs'%settings.ROOTSPOT,
 		shell=True,cwd=os.path.join(settings.DROPSPOT,sim.code),executable="/bin/bash")
+	bundle_info = is_bundle(sim.program)
+	if not bundle_info:
+		subprocess.check_call('make program %s'%sim.program,
+			shell=True,cwd=os.path.join(settings.DROPSPOT,sim.code),executable="/bin/bash")
+	else:
+		bundle = Bundle.objects.get(name=bundle_info[0]) 
+		get_bundle(bundle.id,sim.code)
 	sim.save()
 
 def prepare_source(source,sim,settings_dict,single_pdb=False):
@@ -79,21 +110,23 @@ def index(request):
 	if request.method == 'GET': 
 		form = build_simulation_form()
 		form_sources = build_sources_form()
+		form_bundles = build_bundles_form()
 	else:
 		form = build_simulation_form(request.POST,request.FILES)
 		form_sources = build_sources_form()
+		form_bundles = build_bundles_form()
 		if form.is_valid():
 			sim = form.save(commit=False)
-			#---save to set the pk which determines the folder
 			sim.save()
 			prepare_simulation(sim)
 			return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
 	allsims = Simulation.objects.all().order_by('id')
 	allsources = Source.objects.all().order_by('id')
+	bundles = Bundle.objects.all().order_by('id')
 	modifier = ['','_basic'][0]
 	return render(request,'simulator/index%s.html'%modifier,{
-		'form_simulation':form,'allsims':allsims,
-		'form_sources':form_sources,'allsources':allsources,
+		'form_simulation':form,'allsims':allsims,'bundles':bundles,
+		'form_bundles':form_bundles,'form_sources':form_sources,'allsources':allsources,
 		'CELERYPORT':settings.CELERYPORT,
 		})
 		
@@ -121,6 +154,34 @@ def upload_sources(request):
 		'allsims':Simulation.objects.all().order_by('id'),
 		'allsources':Source.objects.all().order_by('id')})
 
+def upload_bundles(request):
+
+	"""
+	Upload files to a new external source which can be added to future simulations.
+	"""
+
+	form = build_simulation_form()
+	form_sources = build_sources_form()
+	if request.method == 'GET': form_bundles = build_bundles_form()
+	else:
+		form_bundles = build_bundles_form(request.POST,request.FILES)
+		if form_bundles.is_valid():
+			bundle = form_bundles.save(commit=True)
+			if not os.path.isdir(path_expander(bundle.path)):
+				path = bundle.path
+				bundle.delete()
+				return HttpResponse('[ERROR] "%s" is not a directory on this system'%path)
+			if (not os.path.isdir(os.path.join(path_expander(bundle.path),'.git')) and not
+				os.path.isfile(os.path.join(path_expander(bundle.path),'HEAD'))):
+				path = bundle.path
+				bundle.delete()
+				return HttpResponse('[ERROR] "%s" does not contain ".git" or \"HEAD\"'%path)
+			return HttpResponseRedirect(reverse('simulator:index'))
+	return render(request,'simulator/index.html',{
+		'form_simulation':form,'form_sources':form_sources,'form_bundles':form_bundles,
+		'allsims':Simulation.objects.all().order_by('id'),
+		'allsources':Source.objects.all().order_by('id'),
+		'bundles':Bundle.objects.all().order_by('id')})
 		
 def simulation_script(fn,changes=None):
 
@@ -128,31 +189,53 @@ def simulation_script(fn,changes=None):
 	Read (and possibly rewrite) the settings from a simulation script.
 	"""
 
-	end_settings_regex = '^(import amx|from amx import)'	
-	with open(fn) as fp: script = fp.readlines()
-	start_line = [ii for ii,i in enumerate(script) if re.match(end_settings_regex,i)][0]
-	extract = {}
-	exec('\n'.join(script[:[ii for ii,i in enumerate(script) 
-		if re.match(end_settings_regex,i)][0]]),extract)
-	settings_text = extract['settings']
-	if changes:
-		altered_settings_text = ''.join(['%s: %s\n'%(str(key),str(val)) for key,val in changes.items()])
+	#---read the raw script
+	with open(fn) as fp: script_raw = fp.read()
+	#---extract all settings blocks which must multi-line python strings without escaped newlines
+	regex_settings_block = '^(settings\w*)\s*=\s*[\"]{3}(.*?)(?:[\"]{3})'
+	#---get the first line of a settings blocks
+	#first_line = next(ii for ii,i in enumerate(script_raw.split('\n')) if re.match(regex_settings_block,i))
+	settings_blocks = [(i,j) for i,j in re.findall(regex_settings_block,script_raw,re.MULTILINE+re.DOTALL)]
+	#---infer whether we are running a program or a bundle
+	regex_program_fn = '^script-\w+\.py$'
+	regex_bundle_fn = '^(meta|proc)\w+\.py$'
+	basename = os.path.basename(fn)
+	if not (re.match(regex_program_fn,basename) or re.match(regex_bundle_fn,basename)):
+		return HttpResponse('[ERROR] the name of your program "%s" violates the naming convention'%fn)
+	if 0 and changes:
+		text_new = str(script_raw) 
+		for key,val in settings_blocks:
+			text_new = re.sub(re.escape(val),'',text_new,re.MULTILINE+re.DOTALL)
+			text_new = '\n'.join([t for t in text_new.split('\n') if not 
+				re.match('^%s.+$'%key,t,re.MULTILINE)])
+		text_new = re.sub(re.escape("#!/usr/bin/python\n"),"",text_new)
+		print "INSIDE CHANGES"
+		print fn
 		with open(fn,'w') as fp:
-			fp.write('#!/usr/bin/python\n')
-			fp.write('settings = """\n')
-			fp.write(altered_settings_text)
-			fp.write('"""\n')
-			for line in script[start_line:]: fp.write(line)
-		settings_text = altered_settings_text
-	#---parse the text on the way out
-	regex = '^(\s*[^:]+)\s*:\s+(.+)'		
-	settings_dict,settings_order = {},[]
-	for line in settings_text.split('\n'):
-		if re.match(regex,line):
-			key,val = re.findall(regex,line)[0]
-			settings_dict[key] = val
-			settings_order.append(key)
-	else: return {'text':settings_text,'dict':settings_dict,'order':settings_order}
+			fp.write('#!/usr/bin/python\n\n')
+			for named_settings,vals in changes:
+				fp.write('%s = """\n'%named_settings)
+				for key,val in vals:
+					fp.write('%s : %s\n'%(key,val))
+				fp.write('"""\n\n')
+			fp.write(text_new)
+		#---re-read the answer for current settings
+		with open(fn) as fp: script_raw = fp.read()
+		settings_blocks = [(i,j) for i,j in 
+			re.findall(regex_settings_block,script_raw,re.MULTILINE+re.DOTALL)]
+	#---regex to extract data from a settings block
+	regex = '^(\s*[^:]+)\s*:\s+(.+)'
+	#---organize all settings by name
+	outgoing = []
+	#---loop over all settings blocks
+	for named_settings,text in settings_blocks:
+		settings_dict = []
+		for line in text.split('\n'):
+			if re.match(regex,line):
+				key,val = re.findall(regex,line)[0]
+				settings_dict.append((key,val))
+		outgoing.append((named_settings,settings_dict))
+	return outgoing
 
 def detail_source(request,id):
 
@@ -190,6 +273,29 @@ def find_simulation(code):
 			return os.path.join(settings.DROPSPOT,code)
 		return os.path.join(settings.PATHFINDER[lookup_spotnames[code]],code)
 
+def get_bundle(pk,sim_code):
+
+	"""
+	Clone a bundle according to its primary key.
+	"""
+
+	bundle = Bundle.objects.get(pk=pk)
+	subprocess.check_call('make review source="%s"'%path_expander(bundle.path),
+		shell=True,cwd=os.path.join(settings.DROPSPOT,sim_code),executable="/bin/bash")
+
+def detail_settings_text(settings):
+
+	"""
+	Takes a list of name,dictionary tuples and prints the text.
+	"""
+
+	text_view_settings = []
+	for name,specs in settings:
+		text_view_settings.append('<strong>%s</strong>'%name)
+		for key,val in specs:
+			text_view_settings.append('%s : %s'%(str(key),str(val)))
+	return '<br>'.join(text_view_settings)
+
 def detail_simulation(request,id):
 
 	"""
@@ -199,31 +305,47 @@ def detail_simulation(request,id):
 	sim = get_object_or_404(Simulation,pk=id)
 	location = find_simulation(sim.code)
 	outgoing = {'sim':sim,'path':location}
-	simscript = location+'/script-%s.py'%sim.program
-	if not os.path.isfile(simscript): 
+	bundle_info = is_bundle(sim.program)
+	if bundle_info:
+		candidate_fns = glob.glob(location+'/inputs/meta*')+glob.glob(location+'inputs/*/meta*')
+		script_fn = [i for i in candidate_fns if re.search(bundle_info[1],os.path.basename(i))]
+		if len(script_fn)!=1:
+			return HttpResponse('[ERROR] non-unique meta script match "%s"'%str(script_fn))
+		simscript = script_fn[0]
+	else: simscript = location+'/script-%s.py'%sim.program
+	if not is_bundle(sim.program) and not os.path.isfile(simscript): 
 		return HttpResponse("[ERROR] could not locate %s, perhaps this simulation is old-school?"%simscript)
+	settings = simulation_script(simscript)
+	settings_orders = [(i,zip(*j)[0]) for i,j in settings]
+	settings_dict = {i:{k:l for k,l in j} for i,j in settings}
 	#---serve the simulation settings in a form if the simulation has not been started
 	if request.method=='GET':
-		settings_text = simulation_script(simscript)['text']
-		if not sim.started: outgoing['form'] = form_simulation_tune(initial={'settings':settings_text})
-		outgoing['settings_text'] = re.sub('\n\n','\n',settings_text)
+		if not sim.started: 
+			form = form_simulation_tune(initial={'settings':settings})
+			outgoing['fieldsets'] = tuple([FieldSet(form,[name+'|'+i for i,j in vals],legend=name) 
+				for snum,(name,vals) in enumerate(settings)])
+			#outgoing['form'] = form_simulation_tune(initial={'settings':settings})
+		outgoing['settings'] = settings
 	#---interpret any changes to the settings and rewrite the simulation script before submitting
 	else:
 		form = form_simulation_tune(request.POST,request.FILES)
 		sim = get_object_or_404(Simulation,pk=id)
-		script_fn = simscript
-		scriptset = simulation_script(script_fn)
-		settings_text,settings_dict,settings_order = [scriptset[i] for i in ['text','dict','order']]
 		#---start simulation
 		additional_sources,additional_files = [],[]
 		if form.is_valid():
-			for key,val in form.data.items():
-				if key in settings_dict: settings_dict[key] = val
+			#---read the data from the form into the settings dictionary
+			all_settings_keys = [i for j in zip(*settings_orders)[1] for i in j]
+			unpacked_form = [(i.split('|'),j) for i,j in form.data.items() if '|' in i]
+			for (named_settings,name),val in [(i,j) for i,j in unpacked_form if i[1] in all_settings_keys]:
+				#---for metarun we have to recover the settings block name and the text
+				settings_dict[named_settings][name] = val
+			#---intercept the sources so we can copy them
 			for pk in form.cleaned_data['incoming_sources']:
 				obj = Source.objects.get(pk=pk)
 				extra_files,extra_sources = prepare_source(obj,sim,settings_dict=settings_dict)
 				additional_files.extend(extra_files)
 				additional_sources.extend(extra_sources)
+		else: return HttpResponse('[ERROR] INVALID FORM')
 		if additional_sources != []: 
 			settings_dict['sources'] = str(additional_sources)
 			settings_order.append('sources')
@@ -231,15 +353,28 @@ def detail_simulation(request,id):
 			settings_dict['files'] = str(additional_files)
 			settings_order.append('files')
 		#---prepare the simulation script
-		scriptset = simulation_script(script_fn,changes=[(key,settings_dict[key]) for key in settings_order])
-		#---previously: sherpa.delay(sim.program,this_job.id,cwd=location)
+		changes = []
+		for key,val in settings_orders: 
+			changes.append((key,[(i,settings_dict[key][i]) for i in val]))
+		scriptset = simulation_script(simscript,changes=changes)
 		#---send the simulation to the worker
-		sherpa.apply_async(args=(sim.program,),kwargs={'cwd':location},retry=False)
+		kwargs = {'cwd':location}
+		if False:
+			#---override if a bundle was selected (note that this ignores the settings writing above)
+			bundles = form.cleaned_data['incoming_bundles']
+			if bundles: 
+				pk,metarun = eval(bundles)
+				get_bundle(pk,sim.code)
+				kwargs['metarun'] = metarun
+		bundle_info = is_bundle(sim.program)
+		if bundle_info: kwargs['metarun'] = bundle_info[1]
+		sherpa.apply_async(args=(sim.program,),kwargs=kwargs,retry=False)
 		sim.started = True
 		sim.save()
 		#---replace the settings in the original script with the updated copy
-		outgoing['settings_text'] = scriptset['text']
+		outgoing['settings_text'] = detail_settings_text(scriptset)
 		return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
+	print "REQUEST = %s"%request.method
 	return render(request,'simulator/detail.html',outgoing)
 	
 def calculation_monitor(request,debug=False):

@@ -1,7 +1,10 @@
 from django.db import models
 from django.core.files.storage import Storage
 from django.conf import settings
-import shutil,os,re
+import shutil,os,re,subprocess
+
+#---global copy of the default program list also used in forms.py
+default_programs = ['protein','cgmd-bilayer','homology']
 
 class SourceQuerySet(models.QuerySet):
 	
@@ -54,7 +57,40 @@ class SimulationQuerySet(models.QuerySet):
 	def delete(self,*args,**kwargs):
 		for obj in self: obj.delete()
 		super(SimulationQuerySet,self).delete(*args,**kwargs)
+
+
+class Bundle(models.Model):
+
+	"""
+	A pointer to a git repository that contains a pre-made simulation procedure.
+	The repo will be cloned into inputs before running the simulation.
+	"""
 	
+	name = models.CharField(max_length=100,default='',unique=True)
+	path = models.CharField(max_length=200,unique=False,blank=False)
+	def __str__(self): return self.name
+
+	class Meta:
+		verbose_name = 'AUTOMACS bundle'
+
+def get_program_choices():
+
+	"""
+	Collect a list of simulation protocols.
+	"""
+
+	#---add metaruns to program choices
+	program_choices = []
+	for pk,path in [[obj.pk,obj.path] for obj in Bundle.objects.all()]:
+		kwargs = dict(shell=True,executable="/bin/bash",stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		proc = subprocess.Popen("git -C %s ls-tree --full-tree -r HEAD"%
+			os.path.abspath(os.path.expanduser(path)),**kwargs)
+		ans = '\n'.join(proc.communicate())
+		regex = '^[0-9]+\s*[^\s]+\s*[^\s]+\s*(metarun[^\s]+)'
+		for m in [re.findall(regex,i)[0] for i in ans.split('\n') if re.match(regex,i)]:
+			program_choices.append(obj.name+' > '+m)
+	return program_choices
+
 class Simulation(models.Model):
 
 	"""
@@ -67,8 +103,9 @@ class Simulation(models.Model):
 		verbose_name = 'AUTOMACS simulation'
 
 	name = models.CharField(max_length=100,unique=True)
-	program_choices = ['protein','cgmd-bilayer','homology']
-	program = models.CharField(max_length=30,choices=[(i,i) for i in program_choices],default='protein')
+	try: program_choices = default_programs + list(get_program_choices())
+	except: program_choices = default_programs
+	program = models.CharField(max_length=100,choices=[(i,i) for i in program_choices],default='protein')
 	started = models.BooleanField(default=False)
 	code = models.CharField(max_length=200,unique=True,blank=True)
 	sources = models.ManyToManyField(Source)

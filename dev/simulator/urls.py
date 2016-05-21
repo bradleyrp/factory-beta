@@ -9,6 +9,7 @@ urlpatterns = [
 	url(r'^$',views.index,name='index'),
 	url(r'^builder$',views.index,name='build_simulation'),
 	url(r'^upload_sources$',views.upload_sources,name='upload_sources'),
+	url(r'^upload_bundles$',views.upload_bundles,name='upload_bundles'),
 	url(r'^sim(?P<id>[0-9]+)',views.detail_simulation,name='detail_simulation'),
 	url(r'^source(?P<id>[0-9]+)',views.detail_source,name='detail_source'),
 	url(r'^logger$',views.calculation_monitor,name='calculation_monitor'),
