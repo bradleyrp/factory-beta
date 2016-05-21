@@ -368,7 +368,15 @@ def detail_simulation(request,id):
 				kwargs['metarun'] = metarun
 		bundle_info = is_bundle(sim.program)
 		if bundle_info: kwargs['metarun'] = bundle_info[1]
-		sherpa.apply_async(args=(sim.program,),kwargs=kwargs,retry=False)
+		#---write a blank PID.log which serves as a token that describes the queue
+		with open(os.path.join(location,'waiting.log'),'w') as fp: fp.write('waiting for execution')
+		#---celery uses the sherpa
+		if settings.BACKRUN == 'celery':
+			sherpa.apply_async(args=(sim.program,),kwargs=kwargs,retry=False)
+		#---old-school background runner uses a simpler method
+		elif settings.BACKRUN == 'old':
+			
+		else: raise
 		sim.started = True
 		sim.save()
 		#---replace the settings in the original script with the updated copy

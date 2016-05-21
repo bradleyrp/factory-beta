@@ -263,7 +263,7 @@ for connection_name,specs in sets.items():
 		#---if port is in the specs we serve the development server on that port and celery on the next
 		if 'port' in specs and backrun=='celery': 
 			fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(specs['port'],specs['port']+1))
-			elif backrun=='celery': fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(8000,8001))
+		elif backrun=='celery': fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(8000,8001))
 
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 

@@ -45,8 +45,8 @@ def detect_last(cwd):
 	except: last_step = 0
 	return last_step + 1
 
-@shared_task(track_started=True,max_retries=1,bind=True,throws=(Terminated,))
-def sherpa(self,program,**kwargs):
+@shared_task(track_started=True,max_retries=0,bind=True,throws=(Terminated,))
+def old_sherpa(self,program,**kwargs):
 
 	"""
 	Use subprocess and celery to execute a job in the background.
@@ -70,11 +70,42 @@ def sherpa(self,program,**kwargs):
 		print "[STATUS] sherpa is running a METARUN job with errors logged to %s"%errorlog
 		job = subprocess.Popen('make metarun %s 2>> %s'%(metarun_short,errorlog),
 			shell=True,cwd=cwd,preexec_fn=os.setsid)
-	job.communicate()
 	pid_log = os.path.join(cwd,'PID.log')
 	with open(pid_log,'w') as fp: fp.write('%d'%job.pid)
 	job.communicate()
 	#---rpb notes that some PID.log files were not removed, particularly on zombie jobs
+	if os.path.isfile(pid_log): os.remove(pid_log)
+	post_job_tasks(program,cwd=cwd+'/s%02d-%s'%(detect_last(cwd),program))
+
+@shared_task(track_started=True,max_retries=0,bind=True,throws=(Terminated,))
+def old_sherpa(self,program,**kwargs):
+
+	"""
+	Use subprocess and celery to execute a job in the background.
+	YOU ABSOLUTELY CANNOT CHANGE THIS FILE WITHOUT RESTARTING THE WORKER!!!
+	"""
+
+	#---infer the watch file
+	cwd = kwargs.get('cwd','./')
+	detect_last(cwd)
+	metarun = kwargs.get('metarun',None)
+	if not metarun:
+		#---concatenate to the script here
+		errorlog = 'script-s%02d-%s.log'%(detect_last(cwd),program)
+		print "[STATUS] sherpa is running a job with errors logged to %s"%errorlog
+		job = subprocess.Popen('./script-%s.py 2>> %s'%(program,errorlog),
+			shell=True,cwd=cwd,preexec_fn=os.setsid)
+	else: 
+		#---concatenate to the script here
+		metarun_short = re.match('^(.+)\.py$',metarun).group(1)
+		errorlog = 'script-%s.log'%(metarun_short)
+		print "[STATUS] sherpa is running a METARUN job with errors logged to %s"%errorlog
+
+	job = subprocess.Popen(cmd,shell=True,cwd=cwd,preexec_fn=os.setsid)
+	job.communicate()
+	pid_log = os.path.join(cwd,'PID.log')
+	with open(pid_log,'w') as fp: fp.write('%d'%job.pid)
+	job.communicate()
 	if os.path.isfile(pid_log): os.remove(pid_log)
 	post_job_tasks(program,cwd=cwd+'/s%02d-%s'%(detect_last(cwd),program))
 
