@@ -28,9 +28,10 @@ location: {{ path }}
 <div class="brick" >
 <div class="inbrick">
 <table style="width:100%;">
-<thead><tr><th style="text-align:right;"></th><th style="text-align:left;"></th></tr></thead>
+<thead><tr><th style="text-align:left;"></th><th style="text-align:left;"></th></tr></thead>
 <tbody>
-<tr><legend><h3>{{ set.legend }}</h3></legend></tr>
+<tr><legend style="text-align:left"><h3>{{ set.legend }}</h3></legend></tr>
+{% if set.details %}{{set.details}}<br>{% endif %}
 {% for field in set %}
 <tr><td style="text-align:right;">{{ field.label }}</td><td>{{ field }}</td></tr>
 {% endfor %}
@@ -53,23 +54,28 @@ location: {{ path }}
 
 <div class="brick" style="text-align:center;">
 <div class="inbrick">
-<table style="width:100%;">
-<thead><tr><th style="text-align:right;"></th><th style="text-align:left;"></th></tr></thead>
+<code>
+<table style="width:100%;border-collapse:collapse;">
 <tbody>
-<tr><legend><h3>{{ set.legend }}</h3></legend></tr>
 {% for named,fix in settings %}
-<tr><td style="text-align:right;"><strong>{{ named }}</strong></td></tr>
+<tr><td style="text-align:right;border-right:2px solid black;padding-right:0.5em">
+<strong>{{ named }}</strong></td>
+<td style="padding-left:0.5em"><strong>values</strong></td></tr>
 {% for key,val in fix %}
-<tr><td style="text-align:right;">{{ key }}</td><td>{{ val }}</td></tr>
+<tr><td style="text-align:right;border-right:2px solid black;padding-right:0.5em">
+{{ key }}</td><td style="padding-left:0.5em">{{ val }}</td></tr>
 {% endfor %}
 {% endfor %}
 </tbody>
 </table>
-
+</code>
 </div></div>
 
 {% endif %}
 
+<div class="brick"><div class="inbrick">
+{% include "simulator/tile_console.html" %}
+</div></div>
 
 {% endblock %}
 

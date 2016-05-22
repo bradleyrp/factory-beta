@@ -2,19 +2,20 @@
 
 <<notes
 Turn off the servers.
-Note that this also wipes dead screens.
+Works for both celery and old-school backrun.
 notes
 
 #---check for stop scripts which indicate old-school background running
-if ls ./script-stop* 1> /dev/null 2>&1; then
+if ls ./logs/script-stop* 1> /dev/null 2>&1; then
 	#---run the stop scripts
-	for f in ./script-stop*; do
+	for f in ./logs/script-stop*; do
 		echo "[STATUS] shutting down with \"$f\""
 		./$f
 		rm $f
 	done
 fi
 
+#---celery shutdown procedure
 if [[ -z $1 ]]; then incoming="\.\w+"; else incoming="\.$1"; fi
 #---get the PID of the suspended screen
 #---previously used: screen -r multiplexer and the user had to send ctrl+c
@@ -27,6 +28,6 @@ PID=$(screen -ls | perl -ne 'BEGIN{ $arg=shift } print $1 . " " if /^\s*([0-9]+)
 if ! [[ -z $PID ]]; then kill -KILL $PID; fi
 PID=$(screen -ls | perl -ne 'BEGIN{ $arg=shift } print $1 . " " if /^\s*([0-9]+)$arg\.worker_calc/' $incoming)
 if ! [[ -z $PID ]]; then kill -KILL $PID; fi
-screen -wipe &> /dev/null
+#---! should we wipe screens here? with: screen -wipe &> /dev/null
 echo "[SERVE] see log/log-serve for messages"
 echo "[STATUS] bye"

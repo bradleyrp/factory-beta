@@ -2,8 +2,8 @@
 
 <<'notes'
 Start the interface and worker servers in background screens.
-It is generally important you DENY OSX the ability to listen to incoming connections.
-Old-school backround job-running is under development here.
+It is essential that you DENY OSX the ability to listen to incoming connections.
+Otherwise you will evetually get broken pipes.
 notes
 
 #---get settings
@@ -25,7 +25,7 @@ CELERYPORT=$(($DEVPORT+1))
 fi
 
 #---blank backrun defaults to the celery method
-if [[ -z $backrun ]]; then 
+if [[ "$backrun" == "celery" ]]; then 
 
 wait_grep() {
   local file="$1"; shift
@@ -80,7 +80,40 @@ elif [[ "$backrun" == "old" ]]; then
 name="devserver-$projname" \
 log="logs/log-serve" \
 pre="source env/bin/activate" \
-command="python $sitespot/$projname/manage.py runserver 0.0.0.0:$DEVPORT"
+cmd="python $sitespot/$projname/manage.py runserver 0.0.0.0:$DEVPORT" \
+stopper="logs/script-stop-devserver.sh"
+
+#---use celery but start the devserver and workers with backrun (DEFAULT)
+elif [[ "$backrun" == "celery_backrun" ]]; then 
+
+#---use the backrun utility to start this job in the background
+./deploy/backrun.py \
+name="devserver-$projname" \
+log="logs/log-serve" \
+pre="source env/bin/activate" \
+cmd="python $sitespot/$projname/manage.py runserver 0.0.0.0:$DEVPORT" \
+stopper="logs/script-stop-devserver.sh"
+
+./deploy/backrun.py \
+name="devserver-$projname-worker-calc" \
+log="logs/log-worker-calc" \
+pre="source env/bin/activate" \
+cmd="python $sitespot/$projname/manage.py celery -A $projname worker -n queue_calc -Q queue_calc --loglevel=INFO" \
+stopper="logs/script-stop-worker-calc.sh"
+
+./deploy/backrun.py \
+name="devserver-$projname-worker-sim" \
+log="logs/log-worker-sim" \
+pre="source env/bin/activate" \
+cmd="python $sitespot/$projname/manage.py celery -A $projname worker -n queue_sim -Q queue_sim --loglevel=INFO" \
+stopper="logs/script-stop-worker-sim.sh"
+
+./deploy/backrun.py \
+name="devserver-$projname-flower" \
+log="logs/log-flower" \
+pre="source env/bin/activate" \
+cmd="python $sitespot/$projname/manage.py celery -A $projname --port=$CELERYPORT flower" \
+stopper="logs/script-stop-flower.sh"
 
 else { echo "[ERROR] unclear backrun" && exit 1; }; fi
 

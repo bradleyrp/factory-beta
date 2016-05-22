@@ -231,9 +231,9 @@ for connection_name,specs in sets.items():
 		'calcspot':specs['calc'],
 		}
 
-	#---set the BACKRUN flag for the type of computation cluster
-	backrun = 'celery' if not 'backrun' in specs else specs['backrun']
-	if backrun=='celery': settings_additions = settings_additions_celery
+	#---set the BACKRUN flag for the type of computation cluster (default below)
+	backrun = 'celery_backrun' if not 'backrun' in specs else specs['backrun']
+	if backrun in ['celery','celery_backrun']: settings_additions = settings_additions_celery
 	elif backrun=='old': settings_additions = settings_additions_old
 	else: raise
 
@@ -261,9 +261,9 @@ for connection_name,specs in sets.items():
 			for key,val in specs['spots'].items()])
 		fp.write('PATHFINDER = %s\n'%str(path_lookups))
 		#---if port is in the specs we serve the development server on that port and celery on the next
-		if 'port' in specs and backrun=='celery': 
+		if 'port' in specs and backrun in ['celery','celery_backrun']: 
 			fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(specs['port'],specs['port']+1))
-		elif backrun=='celery': fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(8000,8001))
+		elif backrun in ['celery','celery_backrun']: fp.write('DEVPORT = %d\nCELERYPORT = %d\n'%(8000,8001))
 
 	with open(urls_append_fn,'w') as fp: fp.write(urls_additions)
 
@@ -291,7 +291,7 @@ for connection_name,specs in sets.items():
 	for dn in ['calc/%s/calcs'%connection_name,'calc/%s/calcs/scripts'%connection_name]: 
 		if not os.path.isdir(dn): os.mkdir(dn)
 	bash('make docs',cwd='calc/%s'%connection_name,log='logs/log-%s-omnicalc-docs'%connection_name,env=True)
-	if backrun == 'celery':
+	if backrun in ['celery','celery_backrun']:
 		shutil.copy('deploy/celery_source.py','site/%s/%s/celery.py'%(connection_name,connection_name))
 		#---BSD/OSX sed does not do in-place replacements
 		bash('perl -pi -e s,multiplexer,%s,g site/%s/%s/celery.py'%
@@ -311,14 +311,9 @@ for connection_name,specs in sets.items():
 	print "[STATUS] replace with a symlink if you wish to store the data elsewhere"
 	#---done kickstart
 
-	#---remove blank calcs and local post/plot from default omnicalc configuration
-	#for folder in ['post','plot']:
-	#	dn = 'calc/%s/%s'%(connection_name,folder)
-	#	if os.path.isdir(dn): shutil.rmtree(dn)
-
 	#---if the repo points nowhere we prepare a calcs folder for omnicalc (repo is required)
 	new_calcs_repo = not (os.path.isdir(abspath(specs['repo'])) and (
-		os.path.isdir(specs['repo']+'/.git') or os.path.isfile(specs['repo']+'/HEAD')))
+		os.path.isdir(abspath(specs['repo'])+'/.git') or os.path.isfile(abspath(specs['repo'])+'/HEAD')))
 	if new_calcs_repo:
 		print "[STATUS] repo path %s does not exist so we are making a new one"%specs['repo']
 		mkdir_or_report(specs['calc']+'/calcs')

@@ -1,7 +1,22 @@
-<div id="queue">
-<form>
-<textarea id="destination_queue" style="min-height:400px;font-weight:400;"
-spellcheck="false" placeholder="QUEUE"></textarea>
-{% csrf_token %}
-</form>
-</div>
+<h2>queue</h2>
+{% if jobs_waiting or jobs_running %}
+<text style='color:gray'>
+refresh browser to update status<br>
+pending jobs will resume on "make run &lt;project&gt;"<br>
+running jobs persist despite "make shutdown"<br></text>
+<a href="/simulator/cancel_pending" style="color:pink">cancel all pending</a>
+<ul>
+{% for sim in jobs_running %}
+<li><a href="/simulator/sim{{ sim.id }}/">{{ sim.name }}</a>
+<strong style="color:red">running</strong>
+<a href="/simulator/sim{{ sim.id }}/terminate" style="color:pink">terminate</a></li>
+{% endfor %}
+{% for sim in jobs_waiting %}
+<li><a href="/simulator/sim{{ sim.id }}/">{{ sim.name }}</a> <text style='color:gray'>waiting</text>
+<a href="/simulator/sim{{ sim.id }}/cancel" style="color:pink">cancel</a></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>no running/waiting jobs</p>
+{% endif %}
+

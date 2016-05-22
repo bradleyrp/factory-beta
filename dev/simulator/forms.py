@@ -10,16 +10,38 @@ from django.db.models.fields import BLANK_CHOICE_DASH
 #---some functions require absolute paths
 def path_expander(x): return os.path.abspath(os.path.expanduser(x))
 
+def get_program_choices():
+
+	"""
+	Collect a list of simulation protocols.
+	"""
+
+	#---add metaruns to program choices
+	program_choices = ['protein','cgmd-bilayer','homology']
+	try:
+		for pk,path in [[obj.pk,obj.path] for obj in Bundle.objects.all()]:
+			kwargs = dict(shell=True,executable="/bin/bash",stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			proc = subprocess.Popen("git -C %s ls-tree --full-tree -r HEAD"%
+				os.path.abspath(os.path.expanduser(path)),**kwargs)
+			ans = '\n'.join(proc.communicate())
+			regex = '^[0-9]+\s*[^\s]+\s*[^\s]+\s*(metarun[^\s]+)'
+			for m in [re.findall(regex,i)[0] for i in ans.split('\n') if re.match(regex,i)]:
+				program_choices.append(obj.name+' > '+m)
+	except: pass
+	return program_choices
+
 class build_simulation_form(forms.ModelForm):
 
+	
 	class Meta:  
 
 		model = Simulation
 		fields = ['name','program']
+		program_choices = get_program_choices()
 		widgets = {
-			'program':forms.Select(attrs={
+			'program':forms.Select(choices=[(i,i) for i in program_choices],attrs={
 				'title':'copy sources directly into step\nfolder (not step/source_name)',
-				'size':len(get_program_choices())+len(default_programs),
+				'size':len(program_choices),
 				})}
 
 	def __init__(self,*args,**kwargs):
@@ -44,8 +66,6 @@ class form_simulation_tune(forms.Form):
 		kwargs.setdefault('label_suffix','')
 		super(forms.Form,self).__init__(*args,**kwargs)
 		if settings_info:
-			print "IAM FORM HERE IS SETTinGGSS"
-			print settings_info
 			for group_num,(named_settings,specs) in enumerate(settings_info):
 				for key,val in specs:
 					self.fields[named_settings+'|'+key] = forms.CharField(max_length=255,initial=val)
