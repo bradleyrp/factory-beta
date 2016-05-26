@@ -64,3 +64,4 @@ form input,textarea,select {
   width:10%;
 }
 
+#limit { position: relative; overflow: hidden; }

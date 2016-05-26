@@ -32,22 +32,56 @@ upcoming:
 	debug 
 """
 
+"""
+print '[STATUS] preparing simulation %d/%d'%(num,nsims)
+source,created = simulator.models.Source.objects.get_or_create(name=test)
+sim,created = simulator.models.Simulation.objects.get_or_create(
+	name='%s rp%d'%(test,num),program='protein')
+prepare_simulation(sim)
+#---mimic simulator.views
+location = find_simulation(sim.code)
+simscript = location+'/script-%s.py'%sim.program
+scriptset = simulation_script(simscript)
+prepare_source(source,sim,settings_dict=scriptset)
+with open(os.path.join(location,'waiting.log'),'w') as fp: fp.write('waiting for execution')
+errorlog = 'script-s%02d-%s.log'%(detect_last(location),sim.program)
+command = './script-%s.py >> %s 2>&1'%(sim.program,errorlog)
+sherpa.apply_async(args=(command,),kwargs={'cwd':location},retry=False)
+sim.started = True
+sim.details = str(scriptset)
+sim.save()
+"""
+
 import os,sys,glob,re
 import shutil
 import subprocess
 
 ###---SETTINGS
-nsims = [0,10,5][-1]
-test = ['trialanine','villin'][0]
+test_set = [('trialanine',5),('villin',5)]
 
 #---more settings
 project_name = 'project'
 rootdir = os.path.abspath(os.getcwd())
 djpath = os.path.join(rootdir,'site',project_name)
 simspath = os.path.join(rootdir,'data',project_name,'sims')
-sources = {'villin':os.path.join(rootdir,'amx-module-test-villin/3trw_nosol_single.pdb')}
-bundles = {'trialanine':{'path':'~/worker/factory/amx-module-test-3ala','metarun':'3ala',
-	'program':'trialanine > metarun_test_3ala.py'}}
+offset = 10
+
+#---loaded
+sources = {
+	'villin':os.path.join(rootdir,'amx-module-test/3trw_nosol_single.pdb'),
+	}
+bundles = {
+	'trialanine':{
+		'metarun':'test_3ala',
+		'bundle_name':'test-suite',
+		'path':'~/worker/factory/amx-module-test',
+		},
+	'villin':{
+		'metarun':'test_villin',
+		'bundle_name':'test-suite',
+		'path':'~/worker/factory/amx-module-test',
+		},
+	}
 
 #---imports from django
 sys.path.insert(0,djpath)
@@ -73,70 +107,59 @@ def upload_source(name,fn):
 	raise Exception('failed to upload %s,%s'%(name,fn))
 
 #---make sources
-if test in sources:
-	for name,source in sources.items():
-		try: upload_source(name,source)
-		except: print '[STATUS] source %s exists'%name
-		obj,created = simulator.models.Source.objects.get_or_create(name='villin')
-		if not created: 
-			print '[STATUS] making source %s'%name
-			obj.save()
+for name,source in sources.items():
+	try: upload_source(name,source)
+	except: print '[STATUS] source %s exists'%name
+	obj,created = simulator.models.Source.objects.get_or_create(name='villin')
+	if not created: 
+		print '[STATUS] making source %s'%name
+		obj.save()
 
 #---make bundles
-if test in bundles:
-	for name,details in bundles.items():
-		obj,created = simulator.models.Bundle.objects.get_or_create(name=name,path=details['path'])
-		if not created: 
-			print '[STATUS] making bundle %s'%name
-			obj.save()
+for name,details in bundles.items():
+	obj,created = simulator.models.Bundle.objects.get_or_create(
+		name=details['bundle_name'],path=details['path'])
+	if not created: 
+		print '[STATUS] making bundle %s'%name
+		obj.save()
 
 #---not designed for old-school which was half-baked anyway
 assert settings.BACKRUN in ['celery','celery_backrun']
 
+def start_simulation_bundle(test):
+
+	"""
+	Start a simulation from a bundle in the prepared list in globals.
+	"""
+
+	metarun = bundles[test]['metarun']
+	program = '%s > metarun_%s.py'%(bundles[test]['bundle_name'],metarun)
+	bundle = simulator.models.Bundle.objects.get(name='test-suite')
+	sim,created = simulator.models.Simulation.objects.get_or_create(name='%s rp%d'%(test,num),
+		program=program)
+	prepare_simulation(sim)
+	#---mimic simulator.views for a BUNDLE
+	location = find_simulation(sim.code)
+	with open(os.path.join(location,'waiting.log'),'w') as fp: fp.write('waiting for execution')
+	bundle_info = is_bundle(sim.program)
+	if bundle_info:
+		candidate_fns = glob.glob(location+'/inputs/meta*')+glob.glob(location+'inputs/*/meta*')
+		script_fn = [i for i in candidate_fns if re.search(bundle_info[1],os.path.basename(i))]
+		simscript = script_fn[0]
+	else: simscript = location+'/script-%s.py'%sim.program
+	scriptset = simulation_script(simscript)
+	location = find_simulation(sim.code)
+	metarun = re.match('^(.+)\.py$',bundle_info[1]).group(1) if bundle_info else None
+	errorlog = 'script-%s.log'%metarun
+	command = 'make metarun %s >> %s 2>&1'%(metarun,errorlog)
+	sherpa.apply_async(args=(command,),kwargs={'cwd':location},retry=False)
+	sim.started = True
+	sim.details = str(scriptset)
+	sim.save()
+
 #---start many simulations
-for num in range(0,nsims):
-	#---a program type job
-	if test=='villin':
+for test,nsims in test_set:
+	for num in range(0,nsims):
 		print '[STATUS] preparing simulation %d/%d'%(num,nsims)
-		source,created = simulator.models.Source.objects.get_or_create(name=test)
-		sim,created = simulator.models.Simulation.objects.get_or_create(
-			name='%s rp%d'%(test,num),program='protein')
-		prepare_simulation(sim)
-		#---mimic simulator.views
-		location = find_simulation(sim.code)
-		simscript = location+'/script-%s.py'%sim.program
-		scriptset = simulation_script(simscript)
-		prepare_source(source,sim,settings_dict=scriptset)
-		with open(os.path.join(location,'waiting.log'),'w') as fp: fp.write('waiting for execution')
-		errorlog = 'script-s%02d-%s.log'%(detect_last(location),sim.program)
-		command = './script-%s.py >> %s 2>&1'%(sim.program,errorlog)
-		sherpa.apply_async(args=(command,),kwargs={'cwd':location},retry=False)
-		sim.started = True
-		sim.details = str(scriptset)
-		sim.save()
-	#---a bundle type job
-	elif test=='trialanine':
-		print '[STATUS] preparing simulation %d/%d'%(num,nsims)
-		bundle = simulator.models.Bundle.objects.get(name=test)
-		sim,created = simulator.models.Simulation.objects.get_or_create(name='%s rp%d'%(test,num),
-			program=bundles[test]['program'])
-		prepare_simulation(sim)
-		#---mimic simulator.views for a BUNDLE
-		location = find_simulation(sim.code)
-		with open(os.path.join(location,'waiting.log'),'w') as fp: fp.write('waiting for execution')
-		bundle_info = is_bundle(sim.program)
-		if bundle_info:
-			candidate_fns = glob.glob(location+'/inputs/meta*')+glob.glob(location+'inputs/*/meta*')
-			script_fn = [i for i in candidate_fns if re.search(bundle_info[1],os.path.basename(i))]
-			simscript = script_fn[0]
-		else: simscript = location+'/script-%s.py'%sim.program
-		scriptset = simulation_script(simscript)
-		location = find_simulation(sim.code)
-		metarun = re.match('^(.+)\.py$',bundle_info[1]).group(1) if bundle_info else None
-		errorlog = 'script-%s.log'%metarun
-		command = 'make metarun %s >> %s 2>&1'%(metarun,errorlog)
-		sherpa.apply_async(args=(command,),kwargs={'cwd':location},retry=False)
-		sim.started = True
-		sim.details = str(scriptset)
-		sim.save()
-	else: raise
+		start_simulation_bundle(test)
+

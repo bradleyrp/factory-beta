@@ -1,22 +1,9 @@
+<div id="result_queue" class="brick" style="text-align:left;">
+<div class="inbrick">
 <h2>queue</h2>
-{% if jobs_waiting or jobs_running %}
-<text style='color:gray'>
-refresh browser to update status<br>
-pending jobs will resume on "make run &lt;project&gt;"<br>
-running jobs persist despite "make shutdown"<br></text>
-<a href="/simulator/cancel_pending" style="color:pink">cancel all pending</a>
-<ul>
-{% for sim in jobs_running %}
-<li><a href="/simulator/sim{{ sim.id }}/">{{ sim.name }}</a>
-<strong style="color:red">running</strong>
-<a href="/simulator/sim{{ sim.id }}/terminate" style="color:pink">terminate</a></li>
-{% endfor %}
-{% for sim in jobs_waiting %}
-<li><a href="/simulator/sim{{ sim.id }}/">{{ sim.name }}</a> <text style='color:gray'>waiting</text>
-<a href="/simulator/sim{{ sim.id }}/cancel" style="color:pink">cancel</a></li>
-{% endfor %}
-</ul>
-{% else %}
-<p>no running/waiting jobs</p>
-{% endif %}
+<div id="limit">
+<div id="destination_queue"></div>	
+</div>
+</div></div>
 
+{% include "simulator/ajax_queue.html" %}

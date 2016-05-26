@@ -28,7 +28,7 @@ def get_program_choices():
 			for m in [re.findall(regex,i)[0] for i in ans.split('\n') if re.match(regex,i)]:
 				program_choices.append(obj.name+' > '+m)
 	except: pass
-	return program_choices
+	return list(set(program_choices))
 
 class build_simulation_form(forms.ModelForm):
 
@@ -41,7 +41,7 @@ class build_simulation_form(forms.ModelForm):
 		widgets = {
 			'program':forms.Select(choices=[(i,i) for i in program_choices],attrs={
 				'title':'copy sources directly into step\nfolder (not step/source_name)',
-				'size':len(program_choices),
+				'size':len(program_choices)+1,'style':'resize:none;overflow:hidden;',
 				})}
 
 	def __init__(self,*args,**kwargs):

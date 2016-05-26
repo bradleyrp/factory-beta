@@ -9,6 +9,8 @@
 {% include "simulator/tile_main.html" %}
 </div></div>
 
+{% include "simulator/tile_queue.html" %}
+
 {% if fieldsets %}
 
 <form action="sim{{ sim.id }}" method="post" enctype="multipart/form-data">
@@ -52,31 +54,38 @@ location: {{ path }}
 </p></code>
 </div></div>
 
+{% for named,fix in settings %}
 <div class="brick" style="text-align:center;">
 <div class="inbrick">
 <code>
-<table style="width:100%;border-collapse:collapse;">
+<table style="width:100%;border-collapse:collapse;table-layout:fixed;width:100%;">
 <tbody>
-{% for named,fix in settings %}
-<tr><td style="text-align:right;border-right:2px solid black;padding-right:0.5em">
+<tr><td style="text-align:right;border-right:3px solid black;padding-right:0.5em">
 <strong>{{ named }}</strong></td>
 <td style="padding-left:0.5em"><strong>values</strong></td></tr>
 {% for key,val in fix %}
-<tr><td style="text-align:right;border-right:2px solid black;padding-right:0.5em">
-{{ key }}</td><td style="padding-left:0.5em">{{ val }}</td></tr>
-{% endfor %}
+<tr><td style="text-align:right;border-right:3px solid black;padding-right:0.5em">
+{{ key }}</td><td style="padding-left:0.5em;word-wrap:break-word;border: 1px solid gray;">{{ val }}</td></tr>
 {% endfor %}
 </tbody>
 </table>
 </code>
 </div></div>
+{% endfor %}
 
 {% endif %}
 
+{% if videolist %}
+{% for vid in videolist %}
 <div class="brick"><div class="inbrick">
-{% include "simulator/tile_console.html" %}
+<video width="100%" controls>
+<source src="/simulator/dropspot/{{ vid }}" type="video/mp4">
+your browser does not support the video tag
+</video> 
 </div></div>
-
-{% endblock %}
+{% endfor %}
+{% endif %}
 
 </div>
+
+{% endblock %}

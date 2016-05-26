@@ -7,7 +7,7 @@ from django.contrib.staticfiles.views import serve
 from django.http import JsonResponse
 from .forms import *
 from .models import *
-if settings.BACKRUN == '':
+if settings.BACKRUN in ['celery','celery_backrun']: 
 	from .tasks import sherpa
 import os,subprocess
 import re,glob,shutil,time
@@ -253,7 +253,7 @@ def simulation_script(fn,changes=None):
 			re.findall(regex_settings_block,script_raw,re.MULTILINE+re.DOTALL)]
 	#---regex to extract data from a settings block
 	regex = '^(\s*[^:]+)\s*:\s+(.+)'
-	#---organize all settings by name
+	#---organize all settings yb name
 	outgoing = []
 	#---loop over all settings blocks
 	for named_settings,text in settings_blocks:
@@ -286,7 +286,7 @@ def find_simulation(code,new=False):
 
 	global lookup_spotnames
 	if code not in lookup_spotnames: 
-		proc = subprocess.Popen('make look',cwd=settings.CALCSPOT,
+		proc = subprocess.Popen('make look',cwd=os.path.join(settings.ROOTSPOT,settings.CALCSPOT),
 			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,stdin=subprocess.PIPE)
 		catch = proc.communicate(
 			input="print '>>>'+work.spotname_lookup('%s')\nsys.exit()\n'"%str(code))
@@ -299,8 +299,8 @@ def find_simulation(code,new=False):
 		except Exception as e:
 			print '[WARNING] failed to find "%s" in omnicalc so perhaps '%code+\
 				'it is new returning dropspot+code'
-			return os.path.join(settings.DROPSPOT,code)
-		return os.path.join(settings.PATHFINDER[lookup_spotnames[code]],code)
+			return os.path.join(settings.DROPSPOT,code,'')
+	return os.path.join(settings.PATHFINDER[lookup_spotnames[code]],code,'')
 
 def get_bundle(pk,sim_code):
 
@@ -335,14 +335,14 @@ def detail_simulation(request,id):
 	location = find_simulation(sim.code)
 	outgoing = {'sim':sim,'path':location}
 	bundle_info = is_bundle(sim.program)
+	if bundle_info:
+		candidate_fns = glob.glob(location+'/inputs/meta*')+glob.glob(location+'/inputs/*/meta*')
+		script_fn = [i for i in candidate_fns if re.search(bundle_info[1],os.path.basename(i))]
+		if len(script_fn)!=1:
+			return HttpResponse('[ERROR] non-unique meta script match "%s"'%str(script_fn))
+		simscript = script_fn[0]
+	else: simscript = location+'/script-%s.py'%sim.program
 	if request.method=='GET' and not sim.started:
-		if bundle_info:
-			candidate_fns = glob.glob(location+'/inputs/meta*')+glob.glob(location+'inputs/*/meta*')
-			script_fn = [i for i in candidate_fns if re.search(bundle_info[1],os.path.basename(i))]
-			if len(script_fn)!=1:
-				return HttpResponse('[ERROR] non-unique meta script match "%s"'%str(script_fn))
-			simscript = script_fn[0]
-		else: simscript = location+'/script-%s.py'%sim.program
 		if not is_bundle(sim.program) and not os.path.isfile(simscript): 
 			return HttpResponse("[ERROR] could not locate %s, perhaps this simulation is old-school?"%simscript)
 		specs = simulation_script(simscript)
@@ -363,6 +363,11 @@ def detail_simulation(request,id):
 	else:
 		form = form_simulation_tune(request.POST,request.FILES)
 		sim = get_object_or_404(Simulation,pk=id)
+
+		specs = simulation_script(simscript)
+		settings_orders = [[i,list(zip(*j)[0])] for i,j in specs]
+		settings_dict = {i:{k:l for k,l in j} for i,j in specs}
+
 		#---start simulation
 		additional_sources,additional_files = [],[]
 		if form.is_valid():
@@ -428,6 +433,8 @@ def detail_simulation(request,id):
 		#---replace the settings in the original script with the updated copy
 		outgoing['settings_text'] = detail_settings_text(scriptset)
 		return HttpResponseRedirect(reverse('simulator:detail_simulation',kwargs={'id':sim.id}))
+	outgoing['videolist'] = [os.path.relpath(fn,os.path.commonprefix([settings.DROPSPOT,fn]))
+		for fn in glob.glob(settings.DROPSPOT+sim.code+'/v*/*.webm')]
 	return render(request,'simulator/detail.html',outgoing)
 	
 def calculation_monitor(request,debug=False):
@@ -471,6 +478,40 @@ def simulation_logger(request,id,debug=False):
 		with open(cwd+'/'+last_log) as fp: lines = fp.readlines()
 		return JsonResponse({'line':lines,'running':True})
 	except: return JsonResponse({'line':'idle','running':False})
+
+def queue_view(request,id=None,debug=False):
+
+	"""
+	Report on a running simulation if one exists.
+	"""
+
+	tile_start = """<div id="result_queue" class="brick"><div class="inbrick">"""
+	tile_end = """</div></div>"""
+	running_link = """<li><a href="/simulator/sim%d/">%s</a> """+\
+		"""<strong style="color:red">running</strong> """+\
+		"""<a href="/simulator/sim%d/terminate" style="color:pink">terminate</a></li>"""
+	waiting_link = """<li><a href="/simulator/sim%d/">%s</a> """+\
+		"""<strong style="color:gray">waiting</strong> """+\
+		"""<a href="/simulator/sim%d/cancel" style="color:pink">cancel</a></li>"""
+
+	#---check for waiting jobs
+	jobs_waiting,jobs_running = [],[]
+	for sim in Simulation.objects.all().order_by('id'):
+		if os.path.isfile(os.path.join(settings.DROPSPOT,sim.code,'waiting.log')):
+			jobs_waiting.append(sim)
+		if os.path.isfile(os.path.join(settings.DROPSPOT,sim.code,'script-stop-job.sh')):
+			jobs_running.append(sim)
+	lines = 'background jobs<br>'+\
+		'<a style="color:gray;font-weight:600;" href="/cancel_pending">cancel all pending</a>'+\
+		'<br>on shutown the current job will continue<br>'+\
+		'on startup previously queue jobs will continue<br>'+\
+		'<ol>'+\
+		''.join([running_link%(i.id,i.name,i.id) for i in jobs_running])+\
+		''.join([waiting_link%(i.id,i.name,i.id) for i in jobs_waiting])+\
+		'</ol>'
+	if not jobs_running and not jobs_waiting: kwargs = {'running':True,'line':'the queue is empty'}
+	else: kwargs = {'running':True,'line':lines}
+	return JsonResponse(kwargs)
 
 def simulation_cancel_all(request,debug=False):
 
