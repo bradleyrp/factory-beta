@@ -246,6 +246,9 @@ for connection_name,specs in sets.items():
 		else: devpath = ""
 		fp.write(devpath+settings_additions)
 		fp.write('\n#---run in the background the old-fashioned way\nBACKRUN = "%s"\n'%backrun)
+		if 'omni_gromacs_config' in specs and specs['omni_gromacs_config']:
+			fp.write('#---automacs/gromacs config file\nAMX_CONFIG = \"%s\"\n'%os.path.abspath(
+				os.path.expanduser(specs['omni_gromacs_config'])))
 		for key,val in settings_paths.items():
 			fp.write('%s = "%s"\n'%(key.upper(),val))
 		for key in ['PLOTSPOT','POSTSPOT','ROOTSPOT']: 

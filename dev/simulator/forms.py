@@ -19,14 +19,21 @@ def get_program_choices():
 	#---add metaruns to program choices
 	program_choices = ['protein','cgmd-bilayer','homology']
 	try:
+		print "TRYING TO GET BUNDLES"
+
 		for pk,path in [[obj.pk,obj.path] for obj in Bundle.objects.all()]:
 			kwargs = dict(shell=True,executable="/bin/bash",stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-			proc = subprocess.Popen("git -C %s ls-tree --full-tree -r HEAD"%
-				os.path.abspath(os.path.expanduser(path)),**kwargs)
+			path_full = os.path.expanduser(os.path.abspath(path))
+			proc = subprocess.Popen("git -C %s ls-tree --full-tree -r HEAD"%path_full,**kwargs)
 			ans = '\n'.join(proc.communicate())
 			regex = '^[0-9]+\s*[^\s]+\s*[^\s]+\s*(metarun[^\s]+)'
 			for m in [re.findall(regex,i)[0] for i in ans.split('\n') if re.match(regex,i)]:
 				program_choices.append(obj.name+' > '+m)
+			print "checking"
+			print path
+			print path_full
+		print program_choices
+		print "WIN!"
 	except: pass
 	return list(set(program_choices))
 

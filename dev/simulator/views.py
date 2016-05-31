@@ -74,6 +74,10 @@ def prepare_simulation(sim):
 	sim.code = rootdir
 	subprocess.check_call('git clone %s %s'%(settings.AUTOMACS_UPSTREAM,rootdir),
 		shell=True,cwd=settings.DROPSPOT)
+	#---if user supplies "omni_gromacs_config" in the connect file it ends up in AMX_CONFIG
+	#---we copy AMX_CONFIG to the config.py location so newly-cloned automacs can find it
+	if settings.AMX_CONFIG:
+		shutil.copyfile(settings.AMX_CONFIG,os.path.join(settings.DROPSPOT,rootdir,'config.py'))
 	subprocess.check_call('source %s/env/bin/activate && make docs'%settings.ROOTSPOT,
 		shell=True,cwd=os.path.join(settings.DROPSPOT,sim.code),executable="/bin/bash")
 	bundle_info = is_bundle(sim.program)

@@ -177,7 +177,7 @@ def index(request,collection_id=-1,group_id=-1,calculation_id=-1,
 	image_fns = collect_images()
 	#---collect codes
 	code_fns = []
-	for root,dns,fns in os.walk(settings.CALCSPOT+'/calcs/'): 
+	for root,dns,fns in os.walk(os.path.join(settings.ROOTSPOT,settings.CALCSPOT,'calcs','')): 
 		for fn in fns:
 			if re.match('^.+[^_]\.py$',fn):
 				code_fns.append((fn,os.path.join(root,fn)))
