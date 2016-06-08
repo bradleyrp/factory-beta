@@ -25,9 +25,10 @@ if not specs['stopper']: specs['stopper'] = 'script-stop-%s.sh'%specs['name']
 
 cmd_full = "%snohup %s > %s 2>&1 &"%(specs['pre'],specs['cmd'],specs['log'])
 print '[BACKRUN] running "%s"'%cmd_full
-job = subprocess.Popen(cmd_full,shell=True,cwd=specs['cwd'],preexec_fn=os.setsid)
-ask = subprocess.Popen('ps xao pid,ppid,pgid,sid,comm',
-	shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+job = subprocess.Popen(cmd_full,shell=True,cwd=specs['cwd'],preexec_fn=os.setsid,
+                       executable='/bin/bash')
+ask = subprocess.Popen('ps xao pid,ppid,pgid,sid,comm',shell=True,
+                       stdout=subprocess.PIPE,stderr=subprocess.PIPE,executable='/bin/bash')
 ret = '\n'.join(ask.communicate()).split('\n')
 #---get the pgid for this job pid
 pgid = next(int(i.split()[2]) for i in ret if re.match('^\s*%d\s'%job.pid,i))
