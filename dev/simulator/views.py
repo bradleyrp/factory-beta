@@ -416,7 +416,7 @@ def detail_simulation(request,id):
 				#---replaced "2>> with 2>&1"
 				command = './script-%s.py >> %s 2>&1'%(sim.program,errorlog)
 			print '[SHERPA] running "%s"'%command
-			sherpa.apply_async(args=(command,),kwargs={'cwd':location},retry=False)
+			sherpa.apply_async(args=(command,),kwargs={'cwd':location},retry=False,queue=settings.PROJECT_NAME+'.queue_sim',routing_key=settings.PROJECT_NAME+'.queue_sim')
 		#---old-school background runner uses a simpler method
 		elif settings.BACKRUN == 'old':
 			if metarun:

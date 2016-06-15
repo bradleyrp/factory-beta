@@ -98,14 +98,14 @@ stopper="logs/script-stop-devserver-"$projname".sh"
 name="devserver-$projname-worker-calc" \
 log="logs/log-worker-calc" \
 pre="source env/bin/activate" \
-cmd="python $sitespot/$projname/manage.py celery -A $projname worker -n queue_calc -Q "$projname".queue_calc --loglevel=INFO" \
+cmd="python $sitespot/$projname/manage.py celery -A $projname worker -n "$projname".queue_calc -Q "$projname".queue_calc --loglevel=INFO" \
 stopper="logs/script-stop-worker-calc-"$projname".sh"
 
 ./deploy/backrun.py \
 name="devserver-$projname-worker-sim" \
 log="logs/log-worker-sim" \
 pre="source env/bin/activate" \
-cmd="python $sitespot/$projname/manage.py celery -A $projname worker -n queue_sim -Q "$projname".queue_sim --loglevel=INFO" \
+cmd="python $sitespot/$projname/manage.py celery -A $projname worker -n "$projname".queue_sim -Q "$projname".queue_sim --loglevel=INFO" \
 stopper="logs/script-stop-worker-sim-"$projname".sh"
 
 ./deploy/backrun.py \
