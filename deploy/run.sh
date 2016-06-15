@@ -92,28 +92,28 @@ name="devserver-$projname" \
 log="logs/log-serve" \
 pre="source env/bin/activate" \
 cmd="python $sitespot/$projname/manage.py runserver 0.0.0.0:$DEVPORT" \
-stopper="logs/script-stop-devserver.sh"
+stopper="logs/script-stop-devserver-"$projname".sh"
 
 ./deploy/backrun.py \
 name="devserver-$projname-worker-calc" \
 log="logs/log-worker-calc" \
 pre="source env/bin/activate" \
-cmd="python $sitespot/$projname/manage.py celery -A $projname worker -n queue_calc -Q queue_calc --loglevel=INFO" \
-stopper="logs/script-stop-worker-calc.sh"
+cmd="python $sitespot/$projname/manage.py celery -A $projname worker -n queue_calc -Q "$projname".queue_calc --loglevel=INFO" \
+stopper="logs/script-stop-worker-calc-"$projname".sh"
 
 ./deploy/backrun.py \
 name="devserver-$projname-worker-sim" \
 log="logs/log-worker-sim" \
 pre="source env/bin/activate" \
-cmd="python $sitespot/$projname/manage.py celery -A $projname worker -n queue_sim -Q queue_sim --loglevel=INFO" \
-stopper="logs/script-stop-worker-sim.sh"
+cmd="python $sitespot/$projname/manage.py celery -A $projname worker -n queue_sim -Q "$projname".queue_sim --loglevel=INFO" \
+stopper="logs/script-stop-worker-sim-"$projname".sh"
 
 ./deploy/backrun.py \
 name="devserver-$projname-flower" \
 log="logs/log-flower" \
 pre="source env/bin/activate" \
 cmd="python $sitespot/$projname/manage.py celery -A $projname --port=$CELERYPORT flower" \
-stopper="logs/script-stop-flower.sh"
+stopper="logs/script-stop-flower-"$projname".sh"
 
 else { echo "[ERROR] unclear backrun" && exit 1; }; fi
 

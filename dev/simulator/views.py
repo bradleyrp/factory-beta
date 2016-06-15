@@ -236,7 +236,7 @@ def simulation_script(fn,changes=None):
 	basename = os.path.basename(fn)
 	if not (re.match(regex_program_fn,basename) or re.match(regex_bundle_fn,basename)):
 		return HttpResponse('[ERROR] the name of your program "%s" violates the naming convention'%fn)
-	if 0 and changes:
+	if changes:
 		text_new = str(script_raw) 
 		for key,val in settings_blocks:
 			text_new = re.sub(re.escape(val),'',text_new,re.MULTILINE+re.DOTALL)

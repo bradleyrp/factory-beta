@@ -62,12 +62,12 @@ try:
     CELERY_RESULT_SERIALIZER = 'json'
     CELERYD_CONCURRENCY = 1
     CELERY_QUEUES = (
-        Queue('queue_sim',Exchange('queue_sim'),routing_key='queue_sim'),
-        Queue('queue_calc',Exchange('queue_calc'),routing_key='queue_calc'),
+        Queue(project_name+'.queue_sim',Exchange(project_name+'.queue_sim'),routing_key=project_name+'.queue_sim'),
+        Queue(project_name+'.queue_calc',Exchange(project_name+'.queue_calc'),routing_key=project_name+'.queue_calc'),
         )
     CELERY_ROUTES = {
-        'simulator.tasks.sherpa':{'queue':'queue_sim','routing_key':'queue_sim'},
-        'calculator.tasks.sherpacalc':{'queue':'queue_calc','routing_key':'queue_calc'},
+        'simulator.tasks.sherpa':{'queue':project_name+'.queue_sim','routing_key':project_name+'.queue_sim'},
+        'calculator.tasks.sherpacalc':{'queue':project_name+'.queue_calc','routing_key':project_name+'.queue_calc'},
         }
 #---sometimes we probe settings.py without executing
 except: pass
@@ -244,13 +244,14 @@ for connection_name,specs in sets.items():
 		if 'development' in specs and specs['development']: 
 			devpath = "import sys;sys.path.insert(0,os.getcwd()+'/dev/')" 
 		else: devpath = ""
+		for key,val in settings_paths.items():
+			fp.write('%s = "%s"\n'%(key.upper(),val))
 		fp.write(devpath+settings_additions)
 		fp.write('\n#---run in the background the old-fashioned way\nBACKRUN = "%s"\n'%backrun)
 		if 'omni_gromacs_config' in specs and specs['omni_gromacs_config']:
 			fp.write('#---automacs/gromacs config file\nAMX_CONFIG = \"%s\"\n'%os.path.abspath(
 				os.path.expanduser(specs['omni_gromacs_config'])))
-		for key,val in settings_paths.items():
-			fp.write('%s = "%s"\n'%(key.upper(),val))
+                else: fp.write('#---automacs/gromacs config file\nAMX_CONFIG = None\n')
 		for key in ['PLOTSPOT','POSTSPOT','ROOTSPOT']: 
 			fp.write('%s = os.path.expanduser(os.path.abspath(%s))\n'%(key,key))
 		#---must specify a database location
