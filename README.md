@@ -8,11 +8,7 @@ The "factory" codes provide a browser-based interface for [AUTOMACS](https://git
 Requires
 --------
 
-	1. Python version 2.7 or higher
-	2. GROMACS (any version)
-	3. hdf5 libraries for writing files
-	4. Numpy, Scipy, and MDAnalysis Python libraries
-	5. Sphinx for documentation
+This package requires a typical linux-based operating system with scientific packages (e.g. Python's scipy), GROMACS for running simulations, and a few other requirements outlined in the installation instructions given by ``make help``. Most linux installations provide the required software via the package manager.
 	
 Installation
 ------------
