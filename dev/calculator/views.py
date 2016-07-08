@@ -34,14 +34,16 @@ def collect_images():
 
 	image_fns = [os.path.basename(fn) for fn in glob.glob(settings.PLOTSPOT+'/*.png')]
 	print image_fns
-	names_path_meta = [(
-		re.sub('_',' ',re.findall('^fig\.([^\.]+)\.',fn)[0]),fn,
-		eval(Image.open(settings.PLOTSPOT+'/'+fn).info['meta']) 
-		if 'meta' in Image.open(settings.PLOTSPOT+'/'+fn).info else {}) for fn in image_fns
-		if re.match('^fig\.([^\.]+)\.',fn)]
-	image_fns_gif = [(os.path.basename(fn),os.path.basename(fn),{}) 
-		for fn in glob.glob(settings.PLOTSPOT+'/*.gif')]
-	return names_path_meta+image_fns_gif
+	try:
+		names_path_meta = [(
+			re.sub('_',' ',re.findall('^fig\.([^\.]+)\.',fn)[0]),fn,
+			eval(Image.open(settings.PLOTSPOT+'/'+fn).info['meta']) 
+			if 'meta' in Image.open(settings.PLOTSPOT+'/'+fn).info else {}) for fn in image_fns
+			if re.match('^fig\.([^\.]+)\.',fn)]
+		image_fns_gif = [(os.path.basename(fn),os.path.basename(fn),{}) 
+			for fn in glob.glob(settings.PLOTSPOT+'/*.gif')]
+		return names_path_meta+image_fns_gif
+	except: return []
 	
 def refresh_thumbnails(request,remake=False):
 

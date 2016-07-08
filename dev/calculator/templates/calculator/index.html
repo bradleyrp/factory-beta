@@ -58,11 +58,20 @@
 </ol></div></div>
 
 <!--IMAGES-->
-{% for key,fn,metadat in image_fns %}
+{% for imkey,fn,metadat in image_fns %}
 
 <div class="brick"><div class="inbrick"><div class="imagetile"><strong>{{ key }}</strong><br>
 <a href="media/{{ fn }}"><img src="media/thumbs/{{ fn }}" style="max-width:350;max-height:400"></a>
+
+<!--
+<text class="metadata_toggle" id="toggle_metadata_{{ imkey }}"
+style="padding:2px 12px 2px 12px;border:1px solid #999999;font-weight:600;font-size:1.0em;">
+metadata</text>
+<p id="text_metadata_{{ imkey }}" class="image_metadata_text">
+-->
 <ol>{% for key,val in metadat.items %}<li>{{ key }}: {{ val }}</li>{% endfor %}</ol>
+<!--</p>-->
+
 </div></div>
 
 </div>

@@ -37,6 +37,13 @@ body a.toc-backref {
   font-size:14pt;
 }
 
+.metadata_toggle { 
+  min-height:50px;
+  background:gray;
+  color:white;
+  font-size:14pt;
+}
+
 #result { min-height:400px; }
 
 .brick .inbrick { 
