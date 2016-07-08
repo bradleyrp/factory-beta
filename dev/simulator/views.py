@@ -74,6 +74,10 @@ def prepare_simulation(sim):
 	sim.code = rootdir
 	subprocess.check_call('git clone %s %s'%(settings.AUTOMACS_UPSTREAM,rootdir),
 		shell=True,cwd=settings.DROPSPOT)
+	#---if user supplies "omni_gromacs_config" in the connect file it ends up in AMX_CONFIG
+	#---we copy AMX_CONFIG to the config.py location so newly-cloned automacs can find it
+	if settings.AMX_CONFIG:
+		shutil.copyfile(settings.AMX_CONFIG,os.path.join(settings.DROPSPOT,rootdir,'config.py'))
 	subprocess.check_call('source %s/env/bin/activate && make docs'%settings.ROOTSPOT,
 		shell=True,cwd=os.path.join(settings.DROPSPOT,sim.code),executable="/bin/bash")
 	bundle_info = is_bundle(sim.program)
@@ -232,7 +236,7 @@ def simulation_script(fn,changes=None):
 	basename = os.path.basename(fn)
 	if not (re.match(regex_program_fn,basename) or re.match(regex_bundle_fn,basename)):
 		return HttpResponse('[ERROR] the name of your program "%s" violates the naming convention'%fn)
-	if 0 and changes:
+	if changes:
 		text_new = str(script_raw) 
 		for key,val in settings_blocks:
 			text_new = re.sub(re.escape(val),'',text_new,re.MULTILINE+re.DOTALL)
@@ -412,7 +416,7 @@ def detail_simulation(request,id):
 				#---replaced "2>> with 2>&1"
 				command = './script-%s.py >> %s 2>&1'%(sim.program,errorlog)
 			print '[SHERPA] running "%s"'%command
-			sherpa.apply_async(args=(command,),kwargs={'cwd':location},retry=False)
+			sherpa.apply_async(args=(command,),kwargs={'cwd':location},retry=False,queue=settings.PROJECT_NAME+'.queue_sim',routing_key=settings.PROJECT_NAME+'.queue_sim')
 		#---old-school background runner uses a simpler method
 		elif settings.BACKRUN == 'old':
 			if metarun:
