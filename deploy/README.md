@@ -111,12 +111,12 @@ to the site. Everything runs in the background.
 
 Running the factory uses two ports: 8000 for the site and 5555 
 for celery's "flower" which monitors the background jobs.
-You can view the HTML front-end over an ssh connection.
-First, add an alias for your machine to ~/.ssh/config.
-If you have ssh keys you won't need to enter your password.
-Then, copy ./deploy/tunnelport to your $PATH with execute
-permissions. Run "tunnelport <alias> [port]" to connect to both
-ports. If you specify a port, it will map 8000 to the port and 
+If you are running the factory on a remote machine, you can view the 
+HTML front-end over an ssh connection. First, add an alias for your 
+machine to ~/.ssh/config. If you have ssh keys you won't need to 
+enter your password. Then, copy ./deploy/tunnelport to your $PATH 
+with execute permissions. Run "tunnelport <alias> [port]" to connect 
+to both ports. If you specify a port, it will map 8000 to the port and 
 5555 to the next port. This lets you view multiple factories 
 remotely from one machine. Close all factory tunnels by running
 "tunnelport end" but beward this closes *all* tunnels to ports
