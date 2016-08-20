@@ -10,7 +10,7 @@ $(eval $(RUN_ARGS):;@:)
 
 #---show the banner if no targets
 banner:
-	@sed -n 1,10p deploy/README.md
+	@sed -n 1,11p deploy/logo.md
 
 #---warn the user if the target is invalid
 ifneq ($(filter-out $(VALID_TARGETS),$(word 1,$(RUN_ARGS_UNFILTER))),)
@@ -20,7 +20,7 @@ endif
 
 #---useful hints
 help: 
-	@tail -n +11 deploy/README.md
+	@tail -n +7 README.md
 
 #---do not target arguments if using python
 .PHONY: banner ${RUN_ARGS}

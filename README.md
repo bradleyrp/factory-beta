@@ -10,16 +10,16 @@ The "factory" codes provide a browser-based interface for [AUTOMACS](https://git
 The factory codes use python's virtual environment to install 
 many of its dependencies. In addition to installing python 2.7 
 or higher, you must also have the following software available. 
-We have listed common package names for RPM and DEB systems 
-below. If you're using DEB systems, install these packages via:
+We have listed common package names for `RPM` and `DEB` systems 
+below. If you're using `DEB` systems, install these packages via:
 
 `sudo apt-get install <name>`
 
-1. `**Git**` for version control. Many internal parts of the code
+1. `Git` for version control. Many internal parts of the code
    rely on this program for keeping track of your codes.
 2. Python virtual environment. The packages are named 
    `python-virtualenv` and `python-virtualenvwrapper` 
-   on RPM/DEB systems and `pyenv-virtualenv` and 
+   on `RPM/DEB` systems and `pyenv-virtualenv` and 
    `pyenv-virtualenvwrapper` in homebrew.
 3. Python development headers (namely `arrayobject.h`) 
    named `python-dev` on `DEB` and `python-devel` on `RPM`.
@@ -36,8 +36,8 @@ below. If you're using DEB systems, install these packages via:
    `hdf5-devel`, and `python-h5py` on RPM. On homebrew 
    you only need `hdf5`.
 6. The `redis` message-passing interface named `redis` on 
-   homebrew/RPM and `redis-server` on `DEB`.
-7. `**GROMACS**` should be installed and available in your path. 
+   `homebrew/RPM` and `redis-server` on `DEB`.
+7. `GROMACS` should be installed and available in your path. 
    It is also possible to use environment modules to control 
    your `GROMACS` versions, and our codes let you specify the 
    versions explicitly later on.
@@ -124,5 +124,6 @@ remotely from one machine. Close all factory tunnels by running
 
 ## Questions
 
-Ask the [authors](mailto:biophyscode@gmail.com), who are happy to help you deploy the codes. 
+Ask the [authors](mailto:biophyscode@gmail.com), who are happy to 
+help you deploy the codes. 
 
