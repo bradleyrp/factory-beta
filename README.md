@@ -5,7 +5,7 @@ FACTORY
 
 The "factory" codes provide a browser-based interface for [AUTOMACS](https://github.com/bradleyrp/automacs) (simulation) and [OMNICALC](https://github.com/bradleyrp/omnicalc) (analysis) codes in order to scale molecular biophysical modeling projects to hundreds of simulations, easily reproduce calculations on these data, and easily share the underlying code.
 
-# INSTALLATION
+## Installation
 
 The factory codes use python's virtual environment to install 
 many of its dependencies. In addition to installing python 2.7 
@@ -13,7 +13,7 @@ or higher, you must also have the following software available.
 We have listed common package names for RPM and DEB systems 
 below. If you're using DEB systems, install these packages via:
 
-"sudo apt-get install <name>"
+`sudo apt-get install <name>`
 
 1. "Git" for version control. Many internal parts of the code
    rely on this program for keeping track of your codes.
@@ -51,7 +51,7 @@ access, and the factory codes work best when you can run a
 local web-server to view the interface. Users who lack sudo 
 rights should contact the authors to help with the installation.
 
-## redis setup
+### `redis` setup
 
 Once the software is installed, we must setup redis. Factory 
 provides a cluster-like functionality that runs simulations in 
@@ -61,7 +61,7 @@ interface provided by redis.
 We recommend following your system-specific instructions to
 start the redis daemon using the standard configuration. 
 
-1. Run "redis-server" once to make sure redis is installed 
+1. Run `redis-server` once to make sure redis is installed 
    properly. It will show a neat picture and run in the foreground.
 2. Hit "ctrl+c" to exit, and then locate the default 
    configuration. Sometimes the splash screen tells you where this
